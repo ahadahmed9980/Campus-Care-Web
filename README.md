@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # customer_care_webapp
 
 A new Flutter project.
@@ -15,3 +16,7 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# Campus-Care-Web
+A Flutter web-based admin portal for managing campus requests, departments, announcements, campus information, and notifications.
+>>>>>>> ada742b04c016574ec0cb0a4a84440e44ecce3cb
