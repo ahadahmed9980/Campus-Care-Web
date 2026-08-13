@@ -47,7 +47,7 @@ class _DashboardState extends State<Dashboard> {
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: const Color(0xFF0D1B2A),
-                              width: 1.5,
+                              width: 1.6,
                             ),
                           ),
                         ),
