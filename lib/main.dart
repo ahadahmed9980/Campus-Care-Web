@@ -1,13 +1,15 @@
-import 'package:customer_care_webapp/pages/dashboard.dart';
-import 'package:customer_care_webapp/routes/app_pages.dart';
-import 'package:customer_care_webapp/utils/AppTheme.dart';
+import 'package:customer_care_webapp/pages/main_page.dart';
+import 'package:customer_care_webapp/routes/app_router.dart';
+
+import 'package:customer_care_webapp/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/route_manager.dart';
-import 'firebase_options.dart';
 
+import 'firebase_options.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 void main() async {
+  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
@@ -31,21 +33,17 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true, // Text scaling support ke liye
       splitScreenMode: true,
       builder: (context, child) {
-        return GetMaterialApp(
+        return MaterialApp.router(
+          routerConfig: appRouter,
           debugShowCheckedModeBanner: false,
-          initialRoute: AppPages.INITIAL,
-          getPages: AppPages.pages,
-          unknownRoute: GetPage(
-            name: '/not-found',
-            page: () =>
-                const Scaffold(body: Center(child: Text("Page Not Found!"))),
-          ),
+        
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeMode.light,
+          
           title: 'Campus Care Web',
 
-          home: Dashboard(),
+     
         );
       },
     );
