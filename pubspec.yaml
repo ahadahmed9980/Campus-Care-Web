@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_auth: ^6.5.7
   firebase_core: ^4.13.0
+  sidebarx: ^0.17.2
+  get: ^4.7.3
+  flutter_screenutil: ^5.9.3
 
 dev_dependencies:
   flutter_test:
