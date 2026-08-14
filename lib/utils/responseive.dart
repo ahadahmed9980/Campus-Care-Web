@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 const double mobileBreakpoint = 600;
-const double tabletBreakpoint = 900;
-const double desktopBreakpoint = 1200;
+const double tabletBreakpoint = 1024;
 const double largeDesktopBreakpoint = 1440;
 
 class Responsive extends StatelessWidget {
@@ -29,7 +28,7 @@ class Responsive extends StatelessWidget {
 
   static bool isDesktopScreen(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    return width >= desktopBreakpoint && width < largeDesktopBreakpoint;
+    return width >= tabletBreakpoint && width < largeDesktopBreakpoint;
   }
 
   static bool isLargeDesktopScreen(BuildContext context) =>
@@ -46,9 +45,9 @@ class Responsive extends StatelessWidget {
               desktopScreen ??
               tabletScreen ??
               mobileScreen;
-        } else if (width >= desktopBreakpoint) {
-          return desktopScreen ?? tabletScreen ?? mobileScreen;
         } else if (width >= tabletBreakpoint) {
+          return desktopScreen ?? tabletScreen ?? mobileScreen;
+        } else if (width >= mobileBreakpoint) {
           return tabletScreen ?? mobileScreen;
         } else {
           return mobileScreen;
@@ -57,3 +56,4 @@ class Responsive extends StatelessWidget {
     );
   }
 }
+

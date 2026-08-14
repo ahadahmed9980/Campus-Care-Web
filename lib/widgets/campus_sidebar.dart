@@ -1,4 +1,5 @@
 import 'package:customer_care_webapp/utils/app_colors.dart';
+import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sidebarx/sidebarx.dart';
@@ -8,13 +9,27 @@ class CampusSidebar extends StatelessWidget {
 
   const CampusSidebar({super.key, required this.controller});
 
+  void _handleNavigation(BuildContext context, String route) {
+    context.go(route);
+    final scaffoldState = Scaffold.maybeOf(context);
+    if (scaffoldState != null && scaffoldState.isDrawerOpen) {
+      scaffoldState.closeDrawer();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isMobile = Responsive.isMobileScreen(context);
+    
+    // Dynamic width clamping to ensure usability at all screen resolutions
+    final collapsedWidth = isMobile ? 80.0 : (size.width * 0.065).clamp(70.0, 120.0);
+    final extendedWidth = isMobile ? 250.0 : (size.width * 0.18).clamp(200.0, 300.0);
+
     return SidebarX(
       controller: controller,
       theme: SidebarXTheme(
-        width: size.width * 0.065,
+        width: collapsedWidth,
         margin: const EdgeInsets.all(2),
         decoration: const BoxDecoration(
           color: Color(0xFF081522),
@@ -44,7 +59,7 @@ class CampusSidebar extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white70, size: 20),
         selectedIconTheme: const IconThemeData(color: Colors.white, size: 20),
       ),
-      extendedTheme: SidebarXTheme(width: size.width * 0.18),
+      extendedTheme: SidebarXTheme(width: extendedWidth),
       headerBuilder: (context, extended) {
         return Padding(
           padding: const EdgeInsets.only(
@@ -60,7 +75,7 @@ class CampusSidebar extends StatelessWidget {
             children: [
               Image.asset(
                 "assets/images/logo.png",
-                width: size.width * 0.0391,
+                width: isMobile ? 40.0 : (size.width * 0.0391).clamp(32.0, 60.0),
               ),
               if (extended) ...[
                 const SizedBox(width: 12),
@@ -106,47 +121,47 @@ class CampusSidebar extends StatelessWidget {
         SidebarXItem(
           icon: Icons.home_outlined,
           label: 'Dashboard',
-          onTap: () => context.go('/dashboard'),
+          onTap: () => _handleNavigation(context, '/dashboard'),
         ),
         SidebarXItem(
           icon: Icons.assignment_outlined,
           label: 'Requests',
-          onTap: () => context.go('/requests'),
+          onTap: () => _handleNavigation(context, '/requests'),
         ),
         SidebarXItem(
           icon: Icons.people_outline,
           label: 'Users',
-          onTap: () => context.go('/users'),
+          onTap: () => _handleNavigation(context, '/users'),
         ),
         SidebarXItem(
           icon: Icons.campaign_outlined,
           label: 'Announcements',
-          onTap: () => context.go('/announcements'),
+          onTap: () => _handleNavigation(context, '/announcements'),
         ),
         SidebarXItem(
           icon: Icons.domain_outlined,
           label: 'Campus Information',
-          onTap: () => context.go('/campus-information'),
+          onTap: () => _handleNavigation(context, '/campus-information'),
         ),
         SidebarXItem(
           icon: Icons.category_outlined,
           label: 'Categories',
-          onTap: () => context.go('/categories'),
+          onTap: () => _handleNavigation(context, '/categories'),
         ),
         SidebarXItem(
           icon: Icons.insert_chart_outlined,
           label: 'Reports',
-          onTap: () => context.go('/reports'),
+          onTap: () => _handleNavigation(context, '/reports'),
         ),
         SidebarXItem(
           icon: Icons.notifications_none_outlined,
           label: 'Notifications',
-          onTap: () => context.go('/notifications'),
+          onTap: () => _handleNavigation(context, '/notifications'),
         ),
         SidebarXItem(
           icon: Icons.settings_outlined,
           label: 'Settings',
-          onTap: () => context.go('/settings'),
+          onTap: () => _handleNavigation(context, '/settings'),
         ),
       ],
       footerBuilder: (context, extended) {

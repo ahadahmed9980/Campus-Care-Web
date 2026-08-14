@@ -1,24 +1,43 @@
+import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/campus_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sidebarx/sidebarx.dart';
 
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   final Widget child;
 
-  MainPage({
+  const MainPage({
     super.key,
     required this.child,
   });
 
-  final SidebarXController _controller = SidebarXController(
-    selectedIndex: 1,
-    extended: true,
-  );
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
 
+class _MainPageState extends State<MainPage> {
+  late final SidebarXController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = SidebarXController(
+      selectedIndex: 0,
+      extended: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   int _calculateSelectedIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).uri.path;
+    final location = GoRouterState.of(context).uri.path;
+
     if (location.startsWith('/requests')) return 1;
     if (location.startsWith('/users')) return 2;
     if (location.startsWith('/announcements')) return 3;
@@ -27,21 +46,95 @@ class MainPage extends StatelessWidget {
     if (location.startsWith('/reports')) return 6;
     if (location.startsWith('/notifications')) return 7;
     if (location.startsWith('/settings')) return 8;
-    return 0; // Default /dashboard
+
+    return 0;
+  }
+
+  String _getTitle(String location) {
+    if (location.startsWith('/requests')) return 'Requests';
+    if (location.startsWith('/users')) return 'Users';
+    if (location.startsWith('/announcements')) return 'Announcements';
+    if (location.startsWith('/campus-information')) {
+      return 'Campus Information';
+    }
+    if (location.startsWith('/categories')) return 'Categories';
+    if (location.startsWith('/reports')) return 'Reports';
+    if (location.startsWith('/notifications')) return 'Notifications';
+    if (location.startsWith('/settings')) return 'Settings';
+
+    return 'Dashboard';
   }
 
   @override
   Widget build(BuildContext context) {
-    _controller.selectIndex(_calculateSelectedIndex(context));
+    final isMobile = Responsive.isMobileScreen(context);
+    final isTablet = Responsive.isTabletScreen(context);
+
+    final location = GoRouterState.of(context).uri.path;
+
+    final calculatedIndex = _calculateSelectedIndex(context);
+
+    if (_controller.selectedIndex != calculatedIndex) {
+      _controller.selectIndex(calculatedIndex);
+    }
+
+    final targetExtended = !isMobile && !isTablet;
+
+    if (_controller.extended != targetExtended) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _controller.setExtended(targetExtended);
+        }
+      });
+    }
+
+    final showMobileLayout = isMobile || isTablet;
 
     return Scaffold(
+      appBar: showMobileLayout
+          ? AppBar(
+              title: Text(
+                _getTitle(location),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              leading: Builder(
+                builder: (context) {
+                  return IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  );
+                },
+              ),
+              elevation: 0,
+              backgroundColor:
+                  Theme.of(context).scaffoldBackgroundColor,
+            )
+          : null,
+
+      drawer: showMobileLayout
+          ? Drawer(
+              width: 250,
+              backgroundColor: const Color(0xFF081522),
+              child: CampusSidebar(
+                controller: _controller,
+              ),
+            )
+          : null,
+
       body: Row(
         children: [
-          CampusSidebar(
-            controller: _controller,
-          ),
+          if (!showMobileLayout)
+            CampusSidebar(
+              controller: _controller,
+            ),
+
           Expanded(
-            child: child,
+            child: widget.child,
           ),
         ],
       ),
