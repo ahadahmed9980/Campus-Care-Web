@@ -1,5 +1,6 @@
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
+import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/charts/flchart.dart';
 import 'package:customer_care_webapp/widgets/charts/piechart.dart';
 import 'package:flutter/material.dart';
@@ -195,18 +196,19 @@ class _DashboardState extends State<Dashboard> {
                       constraints: const BoxConstraints(maxWidth: 1600),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Column(
+                        child:   Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 10),
                             // dashboard view of all activities header
-                            Text("Dashboard", style: textTheme.headlineLarge),
-                            const SizedBox(height: 4),
-                            Text(
+                            if (!Responsive.isMobileScreen(context))
+                              Text("Dashboard", style: textTheme.headlineLarge),
+                           if (!Responsive.isMobileScreen(context))   const SizedBox(height: 4),
+                             if (!Responsive.isMobileScreen(context)) Text(
                               "Overview of all activities",
                               style: textTheme.labelLarge,
                             ),
-                            const SizedBox(height: 24),
+                            if (!Responsive.isMobileScreen(context))   const SizedBox(height: 24),
                             // responsive boxes
                             statCardsLayout,
                             const SizedBox(height: 24),
