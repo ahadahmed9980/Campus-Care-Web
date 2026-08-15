@@ -38,8 +38,10 @@ class _MainPageState extends State<MainPage> {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
 
-    if (location.startsWith('/requests')) return 1;
+    if (location.startsWith('/request')) return 1;
+  
     if (location.startsWith('/users')) return 2;
+    
     if (location.startsWith('/announcements')) return 3;
     if (location.startsWith('/campus-information')) return 4;
     if (location.startsWith('/categories')) return 5;
@@ -51,7 +53,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   String _getTitle(String location) {
-    if (location.startsWith('/requests')) return 'Requests';
+    if (location.startsWith('/request')) return 'Requests';
+    
     if (location.startsWith('/users')) return 'Users';
     if (location.startsWith('/announcements')) return 'Announcements';
     if (location.startsWith('/campus-information')) {

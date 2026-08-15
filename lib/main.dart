@@ -30,22 +30,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(DashboardController());
 
-    return ScreenUtilInit(
-      designSize: const Size(1280, 585.3),
-      minTextAdapt: true, 
-      splitScreenMode: true,
-      builder: (context, child) {
-        return Obx(
-          () => MaterialApp.router(
-            routerConfig: appRouter,
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: controller.isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
-            title: 'Campus Care Web',
-          ),
-        );
-      },
+    return Obx(
+      () => MaterialApp.router(
+        routerConfig: appRouter,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: controller.isDarkMode.value
+            ? ThemeMode.dark
+            : ThemeMode.light,
+        title: 'Campus Care Web',
+      ),
     );
   }
 }

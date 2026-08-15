@@ -1,0 +1,147 @@
+Widget _buildUI(BuildContext context) {
+  // Coin list se source initialize karein
+  final CoinDataTableSource dataSource = CoinDataTableSource(coinList);
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    child: PaginatedDataTable(
+      header: const Text(
+        "Coins Overview",
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      rowsPerPage: 5, // Ek page par 5 items dikhayega
+      availableRowsPerPage: const [5, 10], // Dropdown options
+      showCheckboxColumn: false, // Checkboxes hide karne ke liye
+      columns: const [
+        DataColumn(
+          label: Text("ID", style: TextStyle(fontWeight: FontWeight.w900)),
+        ),
+        DataColumn(
+          label: Text("Name", style: TextStyle(fontWeight: FontWeight.w900)),
+        ),
+        DataColumn(
+          label: Text("Chain", style: TextStyle(fontWeight: FontWeight.w900)),
+        ),
+        DataColumn(
+          label: Text("Price", style: TextStyle(fontWeight: FontWeight.w900)),
+        ),
+      ],
+      source: dataSource,
+    ),
+  );
+}
+class CoinDataTableSource extends DataTableSource {
+  final List<Coin> data;
+
+  CoinDataTableSource(this.data);
+
+  @override
+  DataRow? getRow(int index) {
+    if (index >= data.length) return null;
+    final coin = data[index];
+    return DataRow.byIndex(
+      index: index,
+      cells: [
+        DataCell(Text(coin.id.toString())),
+        DataCell(Text(coin.name)),
+        DataCell(Text(coin.chainName)),
+        DataCell(Text("\$${coin.price.toStringAsFixed(2)}")),
+      ],
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get rowCount => data.length;
+
+  @override
+  int get selectedRowCount => 0;
+}
+
+
+
+
+
+
+
+
+//model
+class Coin {
+  final int id;
+  final String name;
+  final String chainName;
+  final double price;
+  Coin({
+    required this.id,
+    required this.name,
+    required this.chainName,
+    required this.price,
+  });
+}
+
+final List<Coin> coinList = [
+  Coin(
+    id: 1,
+    name: 'Bitcoin',
+    chainName: 'BTC',
+    price: 65000.00,
+  ),
+  Coin(
+    id: 2,
+    name: 'Ethereum',
+    chainName: 'ETH',
+    price: 3500.00,
+  ),
+  Coin(
+    id: 3,
+    name: 'Binance Coin',
+    chainName: 'BNB',
+    price: 580.00,
+  ),
+  Coin(
+    id: 4,
+    name: 'Solana',
+    chainName: 'SOL',
+    price: 145.50,
+  ),
+  Coin(
+    id: 5,
+    name: 'Ripple',
+    chainName: 'XRP',
+    price: 0.55,
+  ),
+  Coin(
+    id: 6,
+    name: 'Cardano',
+    chainName: 'ADA',
+    price: 0.45,
+  ),
+  Coin(
+    id: 7,
+    name: 'Dogecoin',
+    chainName: 'DOGE',
+    price: 0.12,
+  ),
+  Coin(
+    id: 8,
+    name: 'Polkadot',
+    chainName: 'DOT',
+    price: 6.80,
+  ),
+  Coin(
+    id: 9,
+    name: 'Avalanche',
+    chainName: 'AVAX',
+    price: 28.50,
+  ),
+  Coin(
+    id: 10,
+    name: 'Chainlink',
+    chainName: 'LINK',
+    price: 13.20,
+  ),
+];
+

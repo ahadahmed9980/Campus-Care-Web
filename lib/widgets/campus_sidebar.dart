@@ -69,9 +69,7 @@ class CampusSidebar extends StatelessWidget {
             right: 16,
           ),
           child: Row(
-            mainAxisAlignment: extended
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Image.asset(
                 "assets/images/logo.png",
@@ -172,9 +170,7 @@ class CampusSidebar extends StatelessWidget {
             border: Border(top: BorderSide(color: Colors.white12, width: 1)),
           ),
           child: Row(
-            mainAxisAlignment: extended
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Stack(
                 children: [
