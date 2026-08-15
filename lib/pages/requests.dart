@@ -114,6 +114,8 @@ class Requests extends StatelessWidget {
 
           if (isMobile) {
             return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+            
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
