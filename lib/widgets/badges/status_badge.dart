@@ -26,7 +26,7 @@ class StatusBadgeState extends State<StatusBadge> {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         widget.status,
