@@ -1,4 +1,5 @@
 import 'package:customer_care_webapp/bindings/request_binding.dart';
+import 'package:customer_care_webapp/bindings/request_detail_binding.dart';
 import 'package:customer_care_webapp/pages/dashboard.dart';
 import 'package:customer_care_webapp/pages/main_page.dart';
 import 'package:customer_care_webapp/pages/request_detail.dart';
@@ -29,9 +30,10 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/request-details',
+       
 
           builder: (context, state) {
-            RequestBinding().dependencies();
+            RequestDetailBinding().dependencies();
             return RequestDetail();
           },
         ),

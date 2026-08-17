@@ -12,7 +12,10 @@ import 'package:go_router/go_router.dart';
 import 'package:customer_care_webapp/widgets/badges/status_badge.dart';
 
 class Requests extends StatelessWidget {
-  Requests({super.key});
+  Requests({super.key}) {
+    //fetching first page 
+    requestcontroller.fetchFirstPage();
+  }
   final requestcontroller = Get.find<RequestController>();
   // final dashboardcontroller = Get.find<DashboardController>();
 
@@ -114,8 +117,8 @@ class Requests extends StatelessWidget {
 
           if (isMobile) {
             return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-            
+              scrollDirection: Axis.vertical,
+
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -130,9 +133,7 @@ class Requests extends StatelessWidget {
               children: [
                 headerAndFilters,
                 const SizedBox(height: 15),
-                Expanded(
-                  child: _buildUI(context, isMobile: false),
-                ),
+                Expanded(child: _buildUI(context, isMobile: false)),
               ],
             );
           }
@@ -224,13 +225,13 @@ class requestTableSource extends DataTableSource {
       },
       index: index,
       cells: [
-        DataCell(Text(request.id.toString())),
+        DataCell(Text(request.id.toString(),)),
         DataCell(Text(request.title.toString())),
-        DataCell(Text(request.category.toString())),
+        DataCell(Text(request.categoryId.toString())),
         DataCell(Text(request.location.toString())),
         DataCell(StatusBadge(status: request.status)),
         DataCell(ProrityBadge(priority: request.priority)),
-        DataCell(Text(request.date.toString())),
+        DataCell(Text(request.createdAt?.toDate().toString() ?? '')),
       ],
     );
   }
@@ -245,17 +246,25 @@ class requestTableSource extends DataTableSource {
   int get selectedRowCount => 0;
 }
 
+// creating top row 
 Widget _buildUI(BuildContext context, {required bool isMobile}) {
   final dashboardcontroller = Get.find<DashboardController>();
-  final requestTableSource datasource = requestTableSource(
-    context: context,
-    data: requestList,
-  );
+  final requestcontroller = Get.find<RequestController>();
+
+  // final requestTableSource datasource = requestTableSource(
+  //   context: context,
+  //   data: requestcontroller.requestList,
+  // );
   final textTheme = Theme.of(context).textTheme;
 
   return Obx(() {
     final isDark = dashboardcontroller.isDarkMode.value;
     final borderColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+
+    final datasource = requestTableSource(
+      context: context,
+      data: requestcontroller.requestList.toList(),
+    );
 
     final table = PaginatedDataTable2(
       fixedTopRows: 1,
@@ -270,9 +279,11 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
           width: 1,
         ),
       ),
+
       headingRowColor: WidgetStateProperty.all(
         isDark ? AppColors.lightText : AppColors.lightBackground,
       ),
+
       columns: [
         DataColumn2(
           label: Text("ID", style: textTheme.bodySmall),
@@ -303,18 +314,17 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
           size: ColumnSize.M,
         ),
       ],
+
       source: datasource,
     );
 
     return Container(
       width: double.infinity,
-
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor, width: 1.5),
       ),
-
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
         clipBehavior: Clip.antiAlias,
@@ -323,10 +333,7 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
           child: isMobile
               ? SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: 1000,
-                    child: table,
-                  ),
+                  child: SizedBox(width: 1000, child: table),
                 )
               : table,
         ),
@@ -334,4 +341,3 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
     );
   });
 }
-
