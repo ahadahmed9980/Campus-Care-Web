@@ -11,7 +11,7 @@ class RequestController extends GetxController {
   var isLoading = false.obs;
   final int pageSize = 5;
   DocumentSnapshot<Map<String, dynamic>>? lastDocument;
-  bool hasNextPage = true;
+  RxBool hasNextPage = true.obs;
 
   @override
   void onInit() {
@@ -35,9 +35,16 @@ class RequestController extends GetxController {
   RxString selectedStatus = "All Status".obs;
 
   // fetching pages
-  Future<void> fetchFirstPage() async {
+  Future<void> fetchFirstPage({bool forceRefresh = false}) async {
+    if (isLoading.value) return;
+    if (requestList.isNotEmpty && !forceRefresh) return;
+
     try {
       isLoading.value = true;
+      if (forceRefresh) {
+        lastDocument = null;
+        hasNextPage.value = true;
+      }
       final snapshot = await fetchRequestService.fetchingRequest(
         limit: pageSize,
       );
@@ -47,10 +54,9 @@ class RequestController extends GetxController {
       if (snapshot.docs.isNotEmpty) {
         lastDocument = snapshot.docs.last;
       }
-      hasNextPage = snapshot.docs.length == pageSize;
-    } catch (err, stack) {
-      print("Error fetching first page of requests: $err");
-      print(stack);
+      hasNextPage.value = snapshot.docs.length == pageSize;
+    } catch (err) {
+      debugPrint("Error fetching first page of requests: $err");
     } finally {
       isLoading.value = false;
     }
@@ -58,7 +64,7 @@ class RequestController extends GetxController {
 
   //fetch next page
   Future<void> fetchNextPage() async {
-    if (!hasNextPage || lastDocument == null) {
+    if (!hasNextPage.value || lastDocument == null || isLoading.value) {
       return;
     }
     try {
@@ -67,16 +73,16 @@ class RequestController extends GetxController {
         limit: pageSize,
         lastDocumnt: lastDocument,
       );
-      requestList.value = snapshot.docs.map((doc) {
+      final newRequests = snapshot.docs.map((doc) {
         return RequestModel.fromMap(doc.data(), doc.id);
       }).toList();
+      requestList.addAll(newRequests);
       if (snapshot.docs.isNotEmpty) {
         lastDocument = snapshot.docs.last;
       }
-      hasNextPage = snapshot.docs.length == pageSize;
-    } catch (err, stack) {
-      print("Error fetching next page of requests: $err");
-      print(stack);
+      hasNextPage.value = snapshot.docs.length == pageSize;
+    } catch (err) {
+      debugPrint("Error fetching next page of requests: $err");
     } finally {
       isLoading.value = false;
     }

@@ -4,20 +4,20 @@ import 'package:customer_care_webapp/models/request_model.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/badges/prority_badge.dart';
+import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/custom_searchbar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:customer_care_webapp/widgets/badges/status_badge.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class Requests extends StatelessWidget {
-  Requests({super.key}) {
-    //fetching first page 
-    requestcontroller.fetchFirstPage();
-  }
+  Requests({super.key});
   final requestcontroller = Get.find<RequestController>();
-  // final dashboardcontroller = Get.find<DashboardController>();
 
   Widget _buildFilters(BuildContext context, BoxConstraints constraints) {
     final dropdown1 = customDropDownbutton(
@@ -149,13 +149,9 @@ Widget customDropDownbutton({
   required RxString selectedValue,
   required RxList<String> items,
 }) {
-  // final requestcontroller = Get.find<RequestController>();
-  // final size = MediaQuery.of(context).size;
   final textTheme = Theme.of(context).textTheme;
   return Obx(
     () => Container(
-      // width: 200,
-      // padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -169,13 +165,11 @@ Widget customDropDownbutton({
       ),
       child: DropdownButtonFormField<String>(
         borderRadius: BorderRadius.circular(16),
-
-        // autofocus: true,
         value: selectedValue.value,
         decoration: InputDecoration(
           filled: true,
           fillColor: Theme.of(context).cardColor,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -189,7 +183,7 @@ Widget customDropDownbutton({
             borderSide: BorderSide(color: AppColors.grey, width: 1.5),
           ),
         ),
-        icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.grey),
+        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.grey),
         style: textTheme.labelMedium,
         items: items.map((status) {
           return DropdownMenuItem<String>(value: status, child: Text(status));
@@ -205,23 +199,22 @@ Widget customDropDownbutton({
   );
 }
 
-class requestTableSource extends DataTableSource {
+class RequestTableSource extends DataTableSource {
+  final requestcontroller = Get.find<RequestController>();
   final List<RequestModel> data;
   final BuildContext context;
-  requestTableSource({required this.data, required this.context});
+  RequestTableSource({required this.data, required this.context});
   void _goToDetails() {
     context.go('/request-details');
   }
 
   @override
-  @override
   DataRow? getRow(int index) {
     if (index >= data.length) return null;
     final request = data[index];
     return DataRow.byIndex(
-      //going to next detail page
       onSelectChanged: (selected) => {
-        if (selected != null) {print("clicked"), _goToDetails()},
+        if (selected != null) {debugPrint("clicked"), _goToDetails()},
       },
       index: index,
       cells: [
@@ -237,107 +230,77 @@ class requestTableSource extends DataTableSource {
   }
 
   @override
-  bool get isRowCountApproximate => false;
+  bool get isRowCountApproximate => (requestcontroller.isLoading.value && requestcontroller.requestList.isEmpty)
+      ? false
+      : requestcontroller.hasNextPage.value;
 
   @override
-  int get rowCount => data.length;
+  int get rowCount => (requestcontroller.isLoading.value && requestcontroller.requestList.isEmpty)
+      ? data.length
+      : (requestcontroller.hasNextPage.value ? data.length + 1 : data.length);
 
   @override
   int get selectedRowCount => 0;
 }
 
-// creating top row 
 Widget _buildUI(BuildContext context, {required bool isMobile}) {
   final dashboardcontroller = Get.find<DashboardController>();
   final requestcontroller = Get.find<RequestController>();
-
-  // final requestTableSource datasource = requestTableSource(
-  //   context: context,
-  //   data: requestcontroller.requestList,
-  // );
   final textTheme = Theme.of(context).textTheme;
 
   return Obx(() {
     final isDark = dashboardcontroller.isDarkMode.value;
-    final borderColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final showSkeleton = requestcontroller.isLoading.value && requestcontroller.requestList.isEmpty;
 
-    final datasource = requestTableSource(
-      context: context,
-      data: requestcontroller.requestList.toList(),
-    );
+    final requestsData = showSkeleton
+        ? List.generate(
+            requestcontroller.pageSize,
+            (index) => RequestModel(
+              id: 'mock_$index',
+              userId: 'user_$index',
+              title: 'Request Title $index',
+              description: 'Mock Description $index',
+              categoryId: 'Category $index',
+              location: 'Block A Room $index',
+              status: 'Submitted',
+              priority: 'High',
+              imageUrl: '',
+              assignedDepartmentId: 'dept_$index',
+              resolutionInfo: '',
+              resolvedBy: '',
+              createdAt: Timestamp.now(),
+            ),
+          )
+        : requestcontroller.requestList.toList();
 
-    final table = PaginatedDataTable2(
-      fixedTopRows: 1,
-      rowsPerPage: 5,
-      availableRowsPerPage: const [5, 10],
-      showCheckboxColumn: false,
-      minWidth: isMobile ? 1000 : 600,
-
-      border: TableBorder(
-        horizontalInside: BorderSide(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-          width: 1,
+    return Skeletonizer(
+      enabled: showSkeleton,
+      child: CustomPaginatedTable(
+        isDarkMode: isDark,
+        isMobile: isMobile,
+        onPageChanged: (rowIndex) {
+          if (rowIndex + requestcontroller.pageSize >= requestcontroller.requestList.length) {
+            requestcontroller.fetchNextPage(); 
+            debugPrint("Next page fetched for row index: $rowIndex");
+          }
+        },
+        source: RequestTableSource(
+          context: context,
+          data: requestsData,
         ),
-      ),
-
-      headingRowColor: WidgetStateProperty.all(
-        isDark ? AppColors.lightText : AppColors.lightBackground,
-      ),
-
-      columns: [
-        DataColumn2(
-          label: Text("ID", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-        DataColumn2(
-          label: Text("Title", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-        DataColumn2(
-          label: Text("Category", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-        DataColumn2(
-          label: Text("Location", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-        DataColumn2(
-          label: Text("Status", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-        DataColumn2(
-          label: Text("Priority", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-        DataColumn2(
-          label: Text("Date", style: textTheme.bodySmall),
-          size: ColumnSize.M,
-        ),
-      ],
-
-      source: datasource,
-    );
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          height: 450,
-          child: isMobile
-              ? SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(width: 1000, child: table),
-                )
-              : table,
-        ),
-      ),
+        columns: [
+          DataColumn2(label: Text("ID", style: textTheme.bodySmall), size: ColumnSize.M),
+          DataColumn2(label: Text("Title", style: textTheme.bodySmall), size: ColumnSize.M),
+          DataColumn2(label: Text("Category", style: textTheme.bodySmall), size: ColumnSize.M),
+          DataColumn2(label: Text("Location", style: textTheme.bodySmall), size: ColumnSize.M),
+          DataColumn2(label: Text("Status", style: textTheme.bodySmall), size: ColumnSize.M),
+          DataColumn2(label: Text("Priority", style: textTheme.bodySmall), size: ColumnSize.M),
+          DataColumn2(label: Text("Date", style: textTheme.bodySmall), size: ColumnSize.M),
+        ],
+      )
+          .animate(key: ValueKey(showSkeleton))
+          .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+          .slideY(begin: 0.05, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
     );
   });
 }
