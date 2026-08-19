@@ -3,6 +3,7 @@ import 'package:customer_care_webapp/controller/dashboard_controller.dart';
 import 'package:customer_care_webapp/models/user_model.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
+import 'package:customer_care_webapp/widgets/custom_button.dart';
 import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/custom_searchbar.dart';
 import 'package:data_table_2/data_table_2.dart';
@@ -23,22 +24,9 @@ class AllUsers extends StatelessWidget {
       searchcontroller: allusercontroller.searchcontroller,
     );
 
-    final updateStatusButton = Container(
-      height: 35,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Text("Update status", style: TextStyle(color: AppColors.darkText)),
+    final updateStatusButton = CustomButton(
+      callback: () {},
+      title: "Update status",
     );
 
     if (constraints.maxWidth < 600) {
@@ -78,13 +66,17 @@ class AllUsers extends StatelessWidget {
                 if (!Responsive.isMobileScreen(context)) ...[
                   Text("Users", style: textTheme.headlineLarge),
                   const SizedBox(height: 15),
-                  Text(
-                    "Managed registered students",
-                    style: textTheme.labelLarge,
+                  Row(
+                    children: [
+                      Text(
+                        "Managed registered students",
+                        style: textTheme.labelLarge,
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(child: _buildFilters(context, constraints)),
+                    ],
                   ),
                 ],
-                const SizedBox(height: 15),
-                _buildFilters(context, constraints),
               ],
             ),
           );
@@ -138,10 +130,8 @@ class UsersTableSource extends DataTableSource {
         DataCell(Text(user.semester?.toString() ?? '')),
         DataCell(
           TableActions(
-          
             onDelete: () {
               debugPrint("Delete tapped for: ${user.id}");
-              
             },
           ),
         ),
@@ -246,7 +236,6 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
 
 //edit and delete
 class TableActions extends StatelessWidget {
- 
   final VoidCallback? onDelete;
 
   const TableActions({super.key, this.onDelete});

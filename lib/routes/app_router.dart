@@ -1,7 +1,9 @@
 import 'package:customer_care_webapp/bindings/all_users_binding.dart';
+import 'package:customer_care_webapp/bindings/announcement_binding.dart';
 import 'package:customer_care_webapp/bindings/request_binding.dart';
 import 'package:customer_care_webapp/bindings/request_detail_binding.dart';
 import 'package:customer_care_webapp/pages/all_users.dart';
+import 'package:customer_care_webapp/pages/announcements.dart';
 import 'package:customer_care_webapp/pages/dashboard.dart';
 import 'package:customer_care_webapp/pages/main_page.dart';
 import 'package:customer_care_webapp/pages/request_detail.dart';
@@ -46,12 +48,13 @@ final appRouter = GoRouter(
             return AllUsers();
           },
         ),
-        // GoRoute(
-        //   path: '/announcements',
-        //   builder: (context, state) {
-        //     return AnnouncementsPage();
-        //   },
-        // ),
+        GoRoute(
+          path: '/announcements',
+          builder: (context, state) {
+            AnnouncementBinding().dependencies();
+            return Announcements();
+          },
+        ),
         //     GoRoute(
         //       path: '/campus-information',
         //       builder: (context, state) {
