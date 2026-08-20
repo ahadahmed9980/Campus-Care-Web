@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/announcement_model.dart';
 import 'package:customer_care_webapp/services/announcement_service.dart';
 import 'package:customer_care_webapp/services/cloudinary_storage.dart';
@@ -8,19 +9,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 class AnnouncementController extends GetxController {
   TextEditingController searchController = TextEditingController();
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
-  
+
   RxList<String> categoryList = <String>["Academic", "General", "Events"].obs;
   RxString selectedCategory = "".obs;
-  
+
   RxList<String> priorityList = <String>["Low", "Medium", "High"].obs;
   RxString selectedPriority = "".obs;
-  
+
   var isToggled = false.obs;
   final Rxn<DateTime> expireAt = Rxn<DateTime>();
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
@@ -29,9 +29,20 @@ class AnnouncementController extends GetxController {
   // Image picker and storage
   final ImagePicker _imagePicker = ImagePicker();
   final Rxn<Uint8List> selectedImageBytes = Rxn<Uint8List>();
-  final Rxn<String> selectedImageName = Rxn<String>();
-
+  //initilizing model
   final AnnouncementService _announcementService = AnnouncementService();
+  final Rxn<String> selectedImageName = Rxn<String>();
+  DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  RxList<AnnouncementModel> announcementList = <AnnouncementModel>[].obs;
+  int pageSize = 5;
+
+  RxBool hasNextPage = true.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchfirstPage();
+  }
 
   void clearImage() {
     selectedImageBytes.value = null;
@@ -68,16 +79,6 @@ class AnnouncementController extends GetxController {
           bytes: selectedImageBytes.value!,
           fileName: selectedImageName.value,
         );
-
-        // if (uploadedImageUrl == null) {
-        //   Get.snackbar(
-        //     "Upload Error",
-        //     "Image upload nahi ho saki, dobara koshish karein.",
-        //     backgroundColor: Colors.red,
-        //     colorText: Colors.white,
-        //   );
-        //   return false;
-        // }
       }
 
       // 2. Current live time generate karein
@@ -93,10 +94,10 @@ class AnnouncementController extends GetxController {
         expiresAt: expireAt.value,
         createdAt: currentTimestamp,
         updatedAt: currentTimestamp,
-        imageUrl: uploadedImageUrl ?? "", 
+        imageUrl: uploadedImageUrl ?? "",
       );
 
-      //  Firebase  par save 
+      //  Firebase  par save
       await _announcementService.uploadAnnouncement(announcementModel);
 
       //  Close dialog & reset
@@ -204,6 +205,124 @@ class AnnouncementController extends GetxController {
         "Image pick nahi ho saki: $e",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Page fetching service
+  Future<void> fetchfirstPage({bool forceRefresh = false}) async {
+    if (isLoading.value) return;
+    if (announcementList.isNotEmpty && !forceRefresh) return;
+
+    try {
+      isLoading.value = true;
+      if (forceRefresh) {
+        lastDocument = null;
+        hasNextPage.value = true;
+      }
+      final snapshot = await _announcementService.fetchAnnouncement(
+        limit: pageSize,
+      );
+      announcementList.value = snapshot.docs.map((doc) {
+        return AnnouncementModel.fromMap(doc.data(), id: doc.id);
+      }).toList();
+
+      if (snapshot.docs.isNotEmpty) {
+        lastDocument = snapshot.docs.last;
+      }
+
+      // Update RxBool // if the value of doc length == page size has next page = true  5==5 3!=5
+      hasNextPage.value = snapshot.docs.length == pageSize;
+    } catch (err) {
+      debugPrint("Error fetching first page: $err");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchNextPage() async {
+    if (!hasNextPage.value || lastDocument == null || isLoading.value) {
+      return;
+    }
+    try {
+      isLoading.value = true;
+      final snapshot = await _announcementService.fetchAnnouncement(
+        limit: pageSize,
+        lastdocument: lastDocument,
+      );
+
+      final newUsers = snapshot.docs.map((doc) {
+        return AnnouncementModel.fromMap(doc.data(), id: doc.id);
+      }).toList();
+
+      announcementList.addAll(newUsers);
+
+      if (snapshot.docs.isNotEmpty) {
+        lastDocument = snapshot.docs.last;
+      }
+
+      // Update RxBool
+      hasNextPage.value = snapshot.docs.length == pageSize;
+    } catch (err) {
+      debugPrint("Error fetching next page: $err");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  //delete announcement
+  Future<void> deleteannouncement(AnnouncementModel item) async {
+    if (item.id == null || item.id!.isEmpty) return;
+    try {
+      await FirebaseFirestore.instance
+          .collection("announcement")
+          .doc(item.id)
+          .delete();
+      //deleting from list
+      announcementList.removeWhere((element) {
+        return element.id == item.id;
+      });
+    } catch (err) {
+      debugPrint('error $err');
+    }
+  }
+
+  //toogle from table
+  Future<void> togglePublishStatus(
+    AnnouncementModel item,
+    bool newValue,
+  ) async {
+    try {
+      if (item.id == null || item.id!.isEmpty) return;
+      //fetching the required data
+
+      final reference = FirebaseFirestore.instance
+          .collection('announcements')
+          .doc(item.id);
+      //assigning new value
+
+      await reference.update({
+        'isPublished': newValue,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      final snapshot = await reference.get();
+      //
+      final index = announcementList.indexWhere(
+        (announcement) => announcement.id == item.id,
+      );
+      if (snapshot.exists && index != -1) {
+        announcementList[index] = AnnouncementModel.fromMap(
+          snapshot.data()!,
+          id: snapshot.id,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Status update failed: $e",
+        backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     }

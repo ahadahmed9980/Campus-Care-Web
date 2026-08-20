@@ -1,17 +1,23 @@
 import 'dart:ui';
 import 'package:customer_care_webapp/controller/announcement_controller.dart';
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
+import 'package:customer_care_webapp/models/announcement_model.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
+import 'package:customer_care_webapp/widgets/badges/prority_badge.dart';
 import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
 import 'package:customer_care_webapp/widgets/custom_button.dart';
+import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/custom_searchbar.dart';
 import 'package:customer_care_webapp/widgets/customeAppDialog.dart';
 import 'package:customer_care_webapp/widgets/textformField.dart';
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/state_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class Announcements extends StatelessWidget {
   const Announcements({super.key});
@@ -292,12 +298,20 @@ class Announcements extends StatelessWidget {
               scrollDirection: Axis.vertical,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [headerAndFilters, const SizedBox(height: 15)],
+                children: [
+                  headerAndFilters,
+                  const SizedBox(height: 15),
+                  _buildUI(context, isMobile: true),
+                ],
               ),
             );
           } else {
             return Column(
-              children: [headerAndFilters, const SizedBox(height: 15)],
+              children: [
+                headerAndFilters,
+                const SizedBox(height: 15),
+                Expanded(child: _buildUI(context, isMobile: false)),
+              ],
             );
           }
         },
@@ -456,4 +470,210 @@ Widget imagecontainer(BuildContext context) {
       const SizedBox(height: 10),
     ],
   );
+}
+
+// tabels
+class AnnouncementTableSource extends DataTableSource {
+  final announcementcontroller = Get.find<AnnouncementController>();
+  final List<AnnouncementModel> data;
+  final BuildContext context;
+
+  AnnouncementTableSource({required this.data, required this.context});
+
+  @override
+  DataRow? getRow(int index) {
+    if (index >= data.length) return null;
+    // Current row ka specific object nikala
+
+    final announcement = data[index];
+
+    return DataRow.byIndex(
+      index: index,
+      cells: [
+        DataCell(Text(announcement.title)),
+        DataCell(Text(announcement.category)),
+        DataCell(ProrityBadge(priority: announcement.priority)),
+        DataCell(
+          Text(
+            announcement.createdAt != null
+                ? DateFormat('dd-MM-yyyy').format(announcement.createdAt!)
+                : '-',
+          ),
+        ),
+        DataCell(
+          Transform.scale(
+            scale: 0.75,
+            child: Switch(
+              value: announcement.isPublished,
+              activeColor: Colors.white,
+              activeTrackColor: AppColors.primary,
+              inactiveThumbColor: Colors.white,
+              inactiveTrackColor: Colors.red,
+              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+              onChanged: (bool value) {
+                //Jab Switch click ho, to pura object aur nayi value controller ko bhej di
+                announcementcontroller.togglePublishStatus(announcement, value);
+              },
+            ),
+          ),
+        ),
+        DataCell(
+          TableActions(
+            onDelete: () {
+              announcementcontroller.deleteannouncement(announcement);
+              debugPrint("Delete tapped for: ${announcement.id}");
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate =>
+      (announcementcontroller.isLoading.value &&
+          announcementcontroller.announcementList.isEmpty)
+      ? false
+      : announcementcontroller.hasNextPage.value;
+
+  @override
+  int get rowCount =>
+      (announcementcontroller.isLoading.value &&
+          announcementcontroller.announcementList.isEmpty)
+      ? data.length
+      : (announcementcontroller.hasNextPage.value
+            ? data.length + 1
+            : data.length);
+
+  @override
+  int get selectedRowCount => 0;
+}
+
+// table builder by using custom widget
+Widget _buildUI(BuildContext context, {required bool isMobile}) {
+  final dashboardcontroller = Get.find<DashboardController>();
+  final announcementController = Get.find<AnnouncementController>();
+  final textTheme = Theme.of(context).textTheme;
+
+  return Obx(() {
+    final isDark = dashboardcontroller.isDarkMode.value;
+    final showSkeleton =
+        announcementController.isLoading.value &&
+        announcementController.announcementList.isEmpty;
+    //Agar data load ho raha hai to Dummy List, warna Firebase wali List
+    final announcementData = showSkeleton
+        ? List.generate(
+            announcementController.pageSize,
+            (index) => AnnouncementModel(
+              title: 'Announcement Title ${index + 1}',
+              description: 'Announcement description ${index + 1}',
+
+              category: index % 3 == 0
+                  ? 'Academic'
+                  : index % 3 == 1
+                  ? 'General'
+                  : 'Events',
+              priority: index % 3 == 0
+                  ? 'High'
+                  : index % 3 == 1
+                  ? 'Medium'
+                  : 'Low',
+              imageUrl: 'https://picsum.photos/200/300?random=$index',
+              isPublished: index % 2 == 0,
+
+              createdAt: DateTime.now().subtract(Duration(days: index)),
+            ),
+          )
+        //list in announcement controller
+        : announcementController.announcementList.toList();
+
+    return Skeletonizer(
+      enabled: showSkeleton,
+      child:
+          CustomPaginatedTable(
+                isDarkMode: isDark,
+                isMobile: isMobile,
+                minWidth: 1000,
+                onPageChanged: (rowIndex) {
+                  if (rowIndex + announcementController.pageSize >=
+                      announcementController.announcementList.length) {
+                    announcementController.fetchNextPage();
+                    debugPrint("Next page fetched for row index: $rowIndex");
+                  }
+                },
+                source: AnnouncementTableSource(
+                  //we are passing data to the announcement table widget
+                  context: context,
+                  data: announcementData,
+                ),
+                columns: [
+                  DataColumn2(
+                    label: Text("Title", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
+                  ),
+                  DataColumn2(
+                    label: Text("Category", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
+                  ),
+                  DataColumn2(
+                    label: Text("Priority", style: textTheme.bodySmall),
+                    size: ColumnSize.L,
+                  ),
+                  DataColumn2(
+                    label: Text("Date", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
+                  ),
+                  DataColumn2(
+                    label: Text("Status", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
+                  ),
+                  DataColumn2(
+                    label: Text("Actions", style: textTheme.bodySmall),
+                    size: ColumnSize.S,
+                  ),
+                ],
+              )
+              .animate(key: ValueKey(showSkeleton))
+              .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+              .slideY(
+                begin: 0.05,
+                end: 0,
+                duration: 400.ms,
+                curve: Curves.easeOutCubic,
+              ),
+    );
+  });
+}
+
+//edit and delete
+class TableActions extends StatelessWidget {
+  final VoidCallback? onDelete;
+
+  const TableActions({super.key, this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        //  Delete
+        Tooltip(
+          message: 'Delete',
+          child: InkWell(
+            onTap: onDelete,
+            borderRadius: BorderRadius.circular(6),
+            child: const Padding(
+              padding: EdgeInsets.all(4.0),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                size: 25,
+                color: Color(0xFFEF5350),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
