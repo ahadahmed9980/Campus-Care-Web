@@ -94,6 +94,7 @@ class _DynamicTextFormFieldState extends State<DynamicTextFormField> {
               hintText: widget.hintText,
 
               hintStyle: textTheme.labelMedium?.copyWith(color: AppColors.grey),
+              errorStyle: textTheme.labelMedium?.copyWith(color: AppColors.red),
 
               filled: true,
               fillColor: Theme.of(context).cardColor,
@@ -116,17 +117,17 @@ class _DynamicTextFormFieldState extends State<DynamicTextFormField> {
 
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.grey, width: 2),
+                borderSide: const BorderSide(color: AppColors.grey, ),
               ),
 
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red, width: 2),
+                borderSide: const BorderSide(color: Colors.red, ),
               ),
 
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red, width: 2),
+                borderSide: const BorderSide(color: Colors.red, ),
               ),
             ),
           ),

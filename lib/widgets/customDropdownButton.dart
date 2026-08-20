@@ -57,6 +57,7 @@ Widget customFormDownbutton({
               isDense: true,
               hintText: hintText,
               hintStyle: textTheme.labelMedium?.copyWith(color: AppColors.grey),
+              errorStyle: textTheme.labelMedium?.copyWith(color: AppColors.red),
               filled: true,
               fillColor: Theme.of(context).cardColor,
               contentPadding: const EdgeInsets.symmetric(
@@ -66,25 +67,25 @@ Widget customFormDownbutton({
               suffixIcon: suffixIcon,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.grey, width: 1.5),
+                borderSide: const BorderSide(color: AppColors.grey, ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.grey, width: 1.5),
+                borderSide: const BorderSide(color: AppColors.grey, ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.grey, width: 1.5),
+                borderSide: const BorderSide(color: AppColors.grey, ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+                borderSide: const BorderSide(color: Colors.redAccent, ),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
                   color: Colors.redAccent,
-                  width: 1.5,
+               
                 ),
               ),
             ),

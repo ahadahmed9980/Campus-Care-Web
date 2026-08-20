@@ -11,7 +11,7 @@ import 'package:customer_care_webapp/widgets/textformField.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/state_manager.dart';
-import 'package:date_format/date_format.dart';
+import 'package:intl/intl.dart';
 
 class Announcements extends StatelessWidget {
   const Announcements({super.key});
@@ -19,12 +19,12 @@ class Announcements extends StatelessWidget {
   Widget _buildFilters(BuildContext context, BoxConstraints constraints) {
     final dashboardcontroller = Get.find<DashboardController>();
     final announcementcontroller = Get.find<AnnouncementController>();
-    TextEditingController searchController = TextEditingController();
+
     final textTheme = Theme.of(context).textTheme;
 
     final searchbar = CustomSearchbar(
       hinttext: "search announcements...",
-      searchcontroller: searchController,
+      searchcontroller: announcementcontroller.searchController,
     );
 
     final updateStatusButton = CustomButton(
@@ -36,19 +36,34 @@ class Announcements extends StatelessWidget {
           builder: (dialogContext) => CustomAppDialog(
             title: "Announcement",
             child: Form(
+              key: announcementcontroller.formkey,
               child: Column(
                 children: [
                   DynamicTextFormField(
                     labelText: "Title",
                     controller: announcementcontroller.titleController,
-                    hintText: "Enter announcement title",
+                    hintText: "Enter announcement title...",
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter title';
+                      }
+
+                      return null;
+                    },
                   ),
 
                   // Description
                   DynamicTextFormField(
                     labelText: "Description",
                     controller: announcementcontroller.descriptionController,
-                    hintText: "Enter description",
+                    hintText: "Enter description...",
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter description';
+                      }
+
+                      return null;
+                    },
                     minLines: 4,
                     maxLines: 6,
                     maxLength: 400,
@@ -59,20 +74,36 @@ class Announcements extends StatelessWidget {
                       Expanded(
                         child: customFormDownbutton(
                           context: context,
+                          hintText: "Select Category",
                           labelText: "Category",
                           selectedValue:
                               announcementcontroller.selectedCategory,
                           items: announcementcontroller.categoryList,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select category';
+                            }
+
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(width: 25),
                       Expanded(
                         child: customFormDownbutton(
                           context: context,
+                          hintText: "Select Priority",
                           labelText: "Priority",
                           selectedValue:
                               announcementcontroller.selectedPriority,
                           items: announcementcontroller.priorityList,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select priority';
+                            }
+
+                            return null;
+                          },
                         ),
                       ),
                     ],
@@ -81,114 +112,44 @@ class Announcements extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   // Image container
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Image (Optional)",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: dashboardcontroller.isDarkMode.value
-                              ? AppColors.darkText
-                              : AppColors.lightText,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 80,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(10),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.cloud_upload_outlined,
-                                color: Colors.green,
-                                size: 30,
-                              ),
-                              Text(
-                                "Click to upload",
-                                style: textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                "PNG , JPG up to 5Mb",
-                                style: textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
+                  imagecontainer(context),
 
+                  //container image finish
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: DynamicTextFormField(
-                          labelText: "Published At",
-                          controller:
-                              announcementcontroller.descriptionController,
-                          hintText: "Select date & time",
-                          readOnly: true,
-                          suffixicon: Icons.calendar_today_outlined,
-                          callback: () async {
-                            DateTime? time = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2030),
-                            );
-                            builder:
-                            (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: const ColorScheme.light(
-                                    primary:
-                                        Colors.blue, // Selected circle color
-                                    onPrimary:
-                                        Colors.white, // Selected text color
-                                    surface: Colors.white, // Background color
-                                    onSurface: Colors
-                                        .black, // Dates Text Color (Black)
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            };
-                                              if (time != null) {
-                    // print(DateFormat.yMMMd().format(time));
-                  }
+                        child: Obx(() {
+                          return DynamicTextFormField(
+                            labelText: "Expired At",
+                            controller: TextEditingController(
+                              text:
+                                  announcementcontroller.expireAt.value ==
+                                      null // <-- Ab yeh expireAt ko check karega
+                                  ? ''
+                                  : DateFormat('yyyy-MM-dd HH:mm').format(
+                                      announcementcontroller.expireAt.value!,
+                                    ),
+                            ),
+                            hintText: "Select date & time",
+                            readOnly: true,
+                            suffixicon: Icons.calendar_today_outlined,
 
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 25),
-                      Expanded(
-                        child: DynamicTextFormField(
-                          labelText: "Expire At",
-                          controller: announcementcontroller.titleController,
-                          hintText: "Select date & time",
-                          readOnly: true,
-                          suffixicon: Icons.calendar_today_outlined,
-                        ),
+                            callback: () async {
+                              //publish At picker function from announcement controller
+                              await announcementcontroller.expireAtPicker(
+                                context,
+                              );
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select expire date';
+                              }
+
+                              return null;
+                            },
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -233,9 +194,34 @@ class Announcements extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Flexible(
-                        child: CustomButton(
-                          callback: () {},
-                          title: "Publish Announcement",
+                        child: Obx(
+                          () => CustomButton(
+                            title: "Publish Announcement",
+                            isLoading: announcementcontroller.isLoading.value,
+                            callback: () async {
+                              //  Form validation check
+                              if (announcementcontroller.formkey.currentState!
+                                  .validate()) {
+                                //  Submit form call
+                                final bool isSuccess =
+                                    await announcementcontroller.submitform(
+                                      context,
+                                    );
+
+                                //  Agar upload kamiyab ho jaye to green snackbar dikhayein
+                                if (isSuccess && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Announcement published successfully!',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ],
@@ -318,4 +304,156 @@ class Announcements extends StatelessWidget {
       ),
     );
   }
+}
+
+//image container widget
+Widget imagecontainer(BuildContext context) {
+  final announcementcontroller = Get.find<AnnouncementController>();
+  final dashboardcontroller = Get.find<DashboardController>();
+
+  final textTheme = Theme.of(context).textTheme;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        "Image (Optional)",
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w900,
+          color: dashboardcontroller.isDarkMode.value
+              ? AppColors.darkText
+              : AppColors.lightText,
+        ),
+      ),
+      const SizedBox(height: 5),
+      Obx(() {
+        final hasImage =
+            announcementcontroller.selectedImageBytes.value != null;
+        return InkWell(
+          onTap: () async {
+            if (!hasImage) {
+              await announcementcontroller.chooseImage();
+            }
+          },
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: hasImage ? AppColors.primary : Colors.transparent,
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: hasImage
+                ? Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: Opacity(
+                            opacity: 0.8,
+                            child: Image.memory(
+                              announcementcontroller.selectedImageBytes.value!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.7),
+                                Colors.transparent,
+                              ],
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(9),
+                              bottomRight: Radius.circular(9),
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            announcementcontroller.selectedImageName.value ??
+                                "Selected Image",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: InkWell(
+                          onTap: () {
+                            announcementcontroller.clearImage();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.cloud_upload_outlined,
+                        color: Colors.green,
+                        size: 30,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Click to upload",
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        "PNG , JPG up to 5Mb",
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        );
+      }),
+      const SizedBox(height: 10),
+    ],
+  );
 }

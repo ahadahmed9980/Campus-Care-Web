@@ -2,13 +2,24 @@ import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
-  final title;
+  final String title;
   final VoidCallback callback;
-  const CustomButton({super.key, required this.callback, required this.title});
+  final bool? isLoading; // Nullable bool
+
+  const CustomButton({
+    super.key,
+    required this.callback,
+    required this.title,
+    this.isLoading,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(onTap: callback,
+    final bool loading = isLoading ?? false;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: loading ? null : callback, // Loading ke doran click disable
       child: Container(
         height: 35,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -24,7 +35,22 @@ class CustomButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(title, style: TextStyle(color: AppColors.darkText)),
+        child: loading
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                title,
+                style: TextStyle(
+                  color: AppColors.darkText,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }
