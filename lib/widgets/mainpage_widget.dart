@@ -17,16 +17,33 @@ import 'package:get/state_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class Announcements extends StatelessWidget {
-  const Announcements({super.key});
+class MainCategoryPageWidget extends StatelessWidget {
+  final String mainTitle;
+  final String maindescription;
+  final String buttonTitle;
+  final TextEditingController search;
+  final String searchbarHinttext;
+  final Widget button_widget;
+  final String button_widget_title;
+
+  MainCategoryPageWidget({
+    super.key,
+    required this.search,
+    required this.mainTitle,
+    required this.maindescription,
+    required this.buttonTitle,
+    required this.searchbarHinttext,
+    required this.button_widget, required this.button_widget_title,
+    
+  });
 
   Widget _buildFilters(BuildContext context, BoxConstraints constraints) {
     final dashboardcontroller = Get.find<DashboardController>();
     final announcementcontroller = Get.find<AnnouncementController>();
 
     final searchbar = CustomSearchbar(
-      hinttext: "search announcements...",
-      searchcontroller: announcementcontroller.searchController,
+      hinttext: searchbarHinttext,
+      searchcontroller: search,
     );
 
     final updateStatusButton = CustomButton(
@@ -35,193 +52,11 @@ class Announcements extends StatelessWidget {
         showDialog(
           context: context,
           barrierColor: Colors.black.withOpacity(0.3),
-          builder: (dialogContext) => CustomAppDialog(
-            title: "Announcement",
-            child: Form(
-              key: announcementcontroller.formkey,
-              child: Column(
-                children: [
-                  DynamicTextFormField(
-                    labelText: "Title",
-                    controller: announcementcontroller.titleController,
-                    hintText: "Enter announcement title...",
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter title';
-                      }
-
-                      return null;
-                    },
-                  ),
-
-                  // Description
-                  DynamicTextFormField(
-                    labelText: "Description",
-                    controller: announcementcontroller.descriptionController,
-                    hintText: "Enter description...",
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter description';
-                      }
-
-                      return null;
-                    },
-                    minLines: 4,
-                    maxLines: 6,
-                    maxLength: 400,
-                  ),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: customFormDownbutton(
-                          context: context,
-                          hintText: "Select Category",
-                          labelText: "Category",
-                          selectedValue:
-                              announcementcontroller.selectedCategory,
-                          items: announcementcontroller.categoryList,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select category';
-                            }
-
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 25),
-                      Expanded(
-                        child: customFormDownbutton(
-                          context: context,
-                          hintText: "Select Priority",
-                          labelText: "Priority",
-                          selectedValue:
-                              announcementcontroller.selectedPriority,
-                          items: announcementcontroller.priorityList,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select priority';
-                            }
-
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Image container
-                  imagecontainer(context),
-
-                  //container image finish
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Obx(() {
-                          return DynamicTextFormField(
-                            labelText: "Expired At",
-                            controller: TextEditingController(
-                              text:
-                                  announcementcontroller.expireAt.value ==
-                                      null // <-- Ab yeh expireAt ko check karega
-                                  ? ''
-                                  : DateFormat('yyyy-MM-dd HH:mm').format(
-                                      announcementcontroller.expireAt.value!,
-                                    ),
-                            ),
-                            hintText: "Select date & time",
-                            readOnly: true,
-                            suffixicon: Icons.calendar_today_outlined,
-
-                            callback: () async {
-                              //publish At picker function from announcement controller
-                              await announcementcontroller.expireAtPicker(
-                                context,
-                              );
-                            },
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please select expire date';
-                              }
-
-                              return null;
-                            },
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Published",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: dashboardcontroller.isDarkMode.value
-                              ? AppColors.darkText
-                              : AppColors.lightText,
-                        ),
-                      ),
-                      Transform.scale(
-                        scale: 0.75,
-                        child: Obx(
-                          () => Switch(
-                            value: announcementcontroller.isToggled.value,
-                            activeColor: Colors.white,
-                            activeTrackColor: AppColors.primary,
-                            inactiveThumbColor: Colors.white,
-                            inactiveTrackColor: Colors.red,
-                            trackOutlineColor: WidgetStateProperty.all(
-                              Colors.transparent,
-                            ),
-                            onChanged: (bool value) {
-                              announcementcontroller.isToggled.value = value;
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Flexible(
-                        child: Obx(
-                          () => CustomButton(
-                            title: "Publish Announcement",
-                            isLoading: announcementcontroller.isLoading.value,
-                            callback: () async {
-                              //  Form validation check
-                              if (announcementcontroller.formkey.currentState!
-                                  .validate()) {
-                                //  Submit form call
-                                await announcementcontroller.submitform(
-                                  context,
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          builder: (dialogContext) =>
+              CustomAppDialog(title: button_widget_title, child: button_widget),
         );
       },
-      title: "New announcement",
+      title: buttonTitle,
     );
 
     if (constraints.maxWidth < 600) {
@@ -252,47 +87,49 @@ class Announcements extends StatelessWidget {
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 600;
 
-          final headerAndFilters = Container(
-            padding: const EdgeInsets.all(16),
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Announcements",
-                  style: isMobile ? textTheme.headlineMedium : textTheme.headlineLarge,
-                ),
-                const SizedBox(height: 10),
-                if (isMobile) ...[
-                  Text(
-                    "Managed announcements",
-                    style: textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildFilters(context, constraints),
-                ] else ...[
-                  Row(
-                    children: [
-                      Text(
-                        "Managed announcements",
-                        style: textTheme.labelLarge,
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(child: _buildFilters(context, constraints)),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          )
-          .animate()
-          .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-          .slideY(
-            begin: -0.1,
-            end: 0,
-            duration: 400.ms,
-            curve: Curves.easeOutCubic,
-          );
+          final headerAndFilters =
+              Container(
+                    padding: const EdgeInsets.all(16),
+                    width: double.infinity,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          mainTitle,
+                          style: isMobile
+                              ? textTheme.headlineMedium
+                              : textTheme.headlineLarge,
+                        ),
+                        const SizedBox(height: 10),
+                        if (isMobile) ...[
+                          Text(maindescription, style: textTheme.labelLarge),
+                          const SizedBox(height: 12),
+                          _buildFilters(context, constraints),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Text(
+                                maindescription,
+                                style: textTheme.labelLarge,
+                              ),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: _buildFilters(context, constraints),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                  .slideY(
+                    begin: -0.1,
+                    end: 0,
+                    duration: 400.ms,
+                    curve: Curves.easeOutCubic,
+                  );
 
           if (isMobile) {
             return SingleChildScrollView(
@@ -677,4 +514,189 @@ class TableActions extends StatelessWidget {
       ],
     );
   }
+}
+
+Widget formWidget (Key? formKey, final bool isAddCategory, TextEditingController title_controller, TextEditingController description_controller, ){
+      final dashboardcontroller = Get.find<DashboardController>();
+  return Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  DynamicTextFormField(
+                    labelText: "Title",
+                    controller: title_controller,
+                    hintText: "Enter announcement title...",
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter title';
+                      }
+
+                      return null;
+                    },
+                  ),
+
+                  // Description
+                  DynamicTextFormField(
+                    labelText: "Description",
+                    controller: description_controller,
+                    hintText: "Enter description...",
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter description';
+                      }
+
+                      return null;
+                    },
+                    minLines: 4,
+                    maxLines: 6,
+                    maxLength: 400,
+                  ),
+//applying condition
+                if(!isAddCategory)...[  Row(
+                    children: [
+                      Expanded(
+                        child: customFormDownbutton(
+                          context: context,
+                          hintText: "Select Category",
+                          labelText: "Category",
+                          selectedValue:
+                              announcementcontroller.selectedCategory,
+                          items: announcementcontroller.categoryList,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select category';
+                            }
+
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 25),
+                      Expanded(
+                        child: customFormDownbutton(
+                          context: context,
+                          hintText: "Select Priority",
+                          labelText: "Priority",
+                          selectedValue:
+                              announcementcontroller.selectedPriority,
+                          items: announcementcontroller.priorityList,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select priority';
+                            }
+
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Image container
+                  imagecontainer(context),
+
+                  //container image finish
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Obx(() {
+                          return DynamicTextFormField(
+                            labelText: "Expired At",
+                            controller: TextEditingController(
+                              text:
+                                  announcementcontroller.expireAt.value ==
+                                      null // <-- Ab yeh expireAt ko check karega
+                                  ? ''
+                                  : DateFormat('yyyy-MM-dd HH:mm').format(
+                                      announcementcontroller.expireAt.value!,
+                                    ),
+                            ),
+                            hintText: "Select date & time",
+                            readOnly: true,
+                            suffixicon: Icons.calendar_today_outlined,
+
+                            callback: () async {
+                              //publish At picker function from announcement controller
+                              await announcementcontroller.expireAtPicker(
+                                context,
+                              );
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select expire date';
+                              }
+
+                              return null;
+                            },
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+],
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Published",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: dashboardcontroller.isDarkMode.value
+                              ? AppColors.darkText
+                              : AppColors.lightText,
+                        ),
+                      ),
+                      Transform.scale(
+                        scale: 0.75,
+                        child: Obx(
+                          () => Switch(
+                            value: announcementcontroller.isToggled.value,
+                            activeColor: Colors.white,
+                            activeTrackColor: AppColors.primary,
+                            inactiveThumbColor: Colors.white,
+                            inactiveTrackColor: Colors.red,
+                            trackOutlineColor: WidgetStateProperty.all(
+                              Colors.transparent,
+                            ),
+                            onChanged: (bool value) {
+                              announcementcontroller.isToggled.value = value;
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: Obx(
+                          () => CustomButton(
+                            title: "Publish Announcement",
+                            isLoading: announcementcontroller.isLoading.value,
+                            callback: () async {
+                              //  Form validation check
+                              if (announcementcontroller.formkey.currentState!
+                                  .validate()) {
+                                //  Submit form call
+                                await announcementcontroller.submitform(
+                                  context,
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
 }

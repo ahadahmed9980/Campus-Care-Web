@@ -106,12 +106,21 @@ class AnnouncementController extends GetxController {
       }
       _resetForm();
 
+      Get.snackbar(
+        "Success",
+        "Announcement published successfully!",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
       return true; // Success
     } catch (e) {
-      print("Firebase Upload Error: $e");
+      debugPrint("Firebase Upload Error: $e");
       Get.snackbar(
         "Error",
         "Upload failed: $e",
+        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -144,6 +153,7 @@ class AnnouncementController extends GetxController {
     );
 
     if (date == null) return;
+    if (!context.mounted) return;
 
     final TimeOfDay? time = await showTimePicker(
       context: context,
@@ -276,15 +286,29 @@ class AnnouncementController extends GetxController {
     if (item.id == null || item.id!.isEmpty) return;
     try {
       await FirebaseFirestore.instance
-          .collection("announcement")
+          .collection("announcements")
           .doc(item.id)
           .delete();
       //deleting from list
       announcementList.removeWhere((element) {
         return element.id == item.id;
       });
+      Get.snackbar(
+        "Success",
+        "Announcement deleted successfully",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     } catch (err) {
       debugPrint('error $err');
+      Get.snackbar(
+        "Error",
+        "Failed to delete announcement: $err",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -318,13 +342,24 @@ class AnnouncementController extends GetxController {
           id: snapshot.id,
         );
       }
+      Get.snackbar(
+        "Success",
+        "Publish status updated successfully",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     } catch (e) {
+      debugPrint('error $e');
       Get.snackbar(
         "Error",
-        "Status update failed: $e",
+        "Failed to update publish status: $e",
+        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     }
   }
+
+ 
 }
