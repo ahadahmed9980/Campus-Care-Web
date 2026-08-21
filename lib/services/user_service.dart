@@ -7,8 +7,8 @@ class UserService {
     DocumentSnapshot<Map<String, dynamic>>? lastdocument,
   }) async {
     Query<Map<String, dynamic>> query = _firestore
-        .collection("students")
-        .orderBy("fullName")
+        .collection("users")
+        // .orderBy("fullName")
         .limit(limit);
     if (lastdocument != null) {
       query = query.startAfterDocument(lastdocument);

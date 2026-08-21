@@ -210,7 +210,24 @@ class RequestTableSource extends DataTableSource {
 
   @override
   DataRow? getRow(int index) {
-    if (index >= data.length) return null;
+    if (index >= data.length) {
+      return DataRow.byIndex(
+        index: index,
+        cells: List.generate(
+          7,
+          (i) => const DataCell(
+            Skeletonizer(
+              enabled: true,
+              child: SizedBox(
+                width: 80,
+                height: 15,
+                child: Card(),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final request = data[index];
     return DataRow.byIndex(
       onSelectChanged: (selected) => {

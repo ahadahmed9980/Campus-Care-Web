@@ -483,7 +483,24 @@ class AnnouncementTableSource extends DataTableSource {
 
   @override
   DataRow? getRow(int index) {
-    if (index >= data.length) return null;
+    if (index >= data.length) {
+      return DataRow.byIndex(
+        index: index,
+        cells: List.generate(
+          6,
+          (i) => const DataCell(
+            Skeletonizer(
+              enabled: true,
+              child: SizedBox(
+                width: 80,
+                height: 15,
+                child: Card(),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     // Current row ka specific object nikala
 
     final announcement = data[index];

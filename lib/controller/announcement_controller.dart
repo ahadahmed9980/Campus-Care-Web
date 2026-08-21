@@ -23,6 +23,7 @@ class AnnouncementController extends GetxController {
 
   var isToggled = false.obs;
   final Rxn<DateTime> expireAt = Rxn<DateTime>();
+  //global key
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
   var isLoading = false.obs;
 
@@ -48,7 +49,7 @@ class AnnouncementController extends GetxController {
     selectedImageBytes.value = null;
     selectedImageName.value = null;
   }
-
+//reset form
   void _resetForm() {
     titleController.clear();
     descriptionController.clear();
@@ -58,7 +59,7 @@ class AnnouncementController extends GetxController {
     selectedImageName.value = null;
     expireAt.value = null;
   }
-
+//dispose to prtect data leakage
   @override
   void onClose() {
     descriptionController.dispose();
@@ -105,6 +106,9 @@ class AnnouncementController extends GetxController {
         context.pop();
       }
       _resetForm();
+
+      // Refresh list to fetch newly uploaded announcement
+      await fetchfirstPage(forceRefresh: true);
 
       Get.snackbar(
         "Success",

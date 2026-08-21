@@ -11,6 +11,7 @@ class DynamicTextFormField extends StatefulWidget {
   final VoidCallback? callback;
 
   final IconData? suffixicon;
+  final IconData? prefixicon;
 
   final String? Function(String?)? validator;
   final int? minLines;
@@ -18,20 +19,18 @@ class DynamicTextFormField extends StatefulWidget {
   final int? maxLength;
   final bool readOnly;
 
-  // final TextInputType? keyboardType;
+  final TextInputType? keyboardType;
 
-  DynamicTextFormField({
+  const DynamicTextFormField({
     super.key,
     required this.controller,
     this.labelText,
     required this.hintText,
     this.callback,
-
     this.validator,
-
+    this.prefixicon,
     this.suffixicon,
-
-    // this.keyboardType,
+    this.keyboardType,
     this.minLines,
     this.maxLines,
     this.maxLength,
@@ -48,32 +47,31 @@ class _DynamicTextFormFieldState extends State<DynamicTextFormField> {
 
   @override
   Widget build(BuildContext context) {
-    // final size = MediaQuery.of(context).size;
     final textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.labelText ?? "",
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-            color: dashboardcontroller.isDarkMode.value
-                ? AppColors.darkText
-                : AppColors.lightText,
+        if (widget.labelText != null && widget.labelText!.isNotEmpty) ...[
+          Text(
+            widget.labelText!,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: dashboardcontroller.isDarkMode.value
+                  ? AppColors.darkText
+                  : AppColors.lightText,
+            ),
           ),
-        ),
-
-        const SizedBox(height: 5),
+          const SizedBox(height: 5),
+        ],
 
         SizedBox(
           width: double.infinity,
           child: TextFormField(
             controller: widget.controller,
             readOnly: widget.readOnly,
-            // keyboardType: widget.keyboardType,
+            keyboardType: widget.keyboardType,
 
-            // expands: true,
             minLines: widget.minLines,
             maxLines: widget.maxLines,
             maxLength: widget.maxLength,
@@ -100,10 +98,18 @@ class _DynamicTextFormFieldState extends State<DynamicTextFormField> {
               fillColor: Theme.of(context).cardColor,
               counterStyle: textTheme.labelSmall,
 
-              suffixIcon: InkWell(
-                onTap: widget.readOnly ? widget.callback : null,
-                child: Icon(widget.suffixicon, color:AppColors.grey),
-              ),
+              // Prefix icon null hone par bilkul extra space nahi lega
+              prefixIcon: widget.prefixicon != null
+                  ? Icon(widget.prefixicon, color: AppColors.grey)
+                  : null,
+
+              // Suffix icon null hone par bilkul extra space nahi lega
+              suffixIcon: widget.suffixicon != null
+                  ? InkWell(
+                      onTap: widget.readOnly ? widget.callback : null,
+                      child: Icon(widget.suffixicon, color: AppColors.grey),
+                    )
+                  : null,
 
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -117,22 +123,22 @@ class _DynamicTextFormFieldState extends State<DynamicTextFormField> {
 
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.grey, ),
+                borderSide: const BorderSide(color: AppColors.grey),
               ),
 
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red, ),
+                borderSide: const BorderSide(color: Colors.red),
               ),
 
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red, ),
+                borderSide: const BorderSide(color: Colors.red),
               ),
             ),
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
       ],
     );
   }

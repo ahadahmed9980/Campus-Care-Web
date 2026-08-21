@@ -172,14 +172,14 @@ class _LegendItem extends StatelessWidget {
   final String title;
   final String stat;
   final Color? titleColor; // Naya parameter
-  final Color? statColor; // Naya parameter
+  // final Color? statColor; // Naya parameter
 
   const _LegendItem({
     required this.color,
     required this.title,
     required this.stat,
     this.titleColor,
-    this.statColor,
+    // this.statColor,
   });
 
   @override
@@ -208,7 +208,7 @@ class _LegendItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             // Yahan stat ka color set hoga
-            color: statColor ?? Colors.grey[600],
+            // color: statColor ?? Colors.grey[600],
           ),
         ),
       ],
