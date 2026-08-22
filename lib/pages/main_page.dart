@@ -7,10 +7,7 @@ import 'package:sidebarx/sidebarx.dart';
 class MainPage extends StatefulWidget {
   final Widget child;
 
-  const MainPage({
-    super.key,
-    required this.child,
-  });
+  const MainPage({super.key, required this.child});
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -23,10 +20,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
 
-    _controller = SidebarXController(
-      selectedIndex: 0,
-      extended: true,
-    );
+    _controller = SidebarXController(selectedIndex: 0, extended: true);
   }
 
   @override
@@ -39,13 +33,13 @@ class _MainPageState extends State<MainPage> {
     final location = GoRouterState.of(context).uri.path;
 
     if (location.startsWith('/request')) return 1;
-  
+
     if (location.startsWith('/users')) return 2;
-    
+
     if (location.startsWith('/announcements')) return 3;
     if (location.startsWith('/campus-information')) return 4;
     if (location.startsWith('/categories')) return 5;
-    if (location.startsWith('/reports')) return 6;
+    if (location.startsWith('/departments')) return 6;
     if (location.startsWith('/notifications')) return 7;
     if (location.startsWith('/settings')) return 8;
 
@@ -54,14 +48,14 @@ class _MainPageState extends State<MainPage> {
 
   String _getTitle(String location) {
     if (location.startsWith('/request')) return 'Requests';
-    
+
     if (location.startsWith('/users')) return 'Users';
     if (location.startsWith('/announcements')) return 'Announcements';
     if (location.startsWith('/campus-information')) {
       return 'Campus Information';
     }
     if (location.startsWith('/categories')) return 'Categories';
-    if (location.startsWith('/reports')) return 'Reports';
+    if (location.startsWith('/departments')) return 'Departments';
     if (location.startsWith('/notifications')) return 'Notifications';
     if (location.startsWith('/settings')) return 'Settings';
 
@@ -114,8 +108,7 @@ class _MainPageState extends State<MainPage> {
                 },
               ),
               elevation: 0,
-              backgroundColor:
-                  Theme.of(context).scaffoldBackgroundColor,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             )
           : null,
 
@@ -123,22 +116,15 @@ class _MainPageState extends State<MainPage> {
           ? Drawer(
               width: 250,
               backgroundColor: const Color(0xFF081522),
-              child: CampusSidebar(
-                controller: _controller,
-              ),
+              child: CampusSidebar(controller: _controller),
             )
           : null,
 
       body: Row(
         children: [
-          if (!showMobileLayout)
-            CampusSidebar(
-              controller: _controller,
-            ),
+          if (!showMobileLayout) CampusSidebar(controller: _controller),
 
-          Expanded(
-            child: widget.child,
-          ),
+          Expanded(child: widget.child),
         ],
       ),
     );

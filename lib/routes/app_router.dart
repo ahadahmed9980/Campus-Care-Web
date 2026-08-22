@@ -1,12 +1,14 @@
 import 'package:customer_care_webapp/bindings/all_users_binding.dart';
 import 'package:customer_care_webapp/bindings/announcement_binding.dart';
 import 'package:customer_care_webapp/bindings/campus_binding.dart';
+import 'package:customer_care_webapp/bindings/department_binding.dart';
 import 'package:customer_care_webapp/bindings/requestCategory_binding.dart';
 import 'package:customer_care_webapp/bindings/request_binding.dart';
 import 'package:customer_care_webapp/bindings/request_detail_binding.dart';
 import 'package:customer_care_webapp/pages/all_users.dart';
 import 'package:customer_care_webapp/pages/announcements.dart';
 import 'package:customer_care_webapp/pages/campus_info.dart';
+import 'package:customer_care_webapp/pages/department.dart';
 import 'package:customer_care_webapp/pages/requestCategories.dart';
 import 'package:customer_care_webapp/pages/dashboard.dart';
 import 'package:customer_care_webapp/pages/main_page.dart';
@@ -73,12 +75,16 @@ final appRouter = GoRouter(
             return requestCategories();
           },
         ),
-        //     GoRoute(
-        //       path: '/reports',
-        //       builder: (context, state) {
-        //         return ReportsPage();
-        //       },
-        //     ),
+        GoRoute(
+          path: '/departments',
+
+          builder: (context, state) {
+             CampusBinding().dependencies();
+             
+            DepartmentBinding().dependencies();
+            return Department();
+          },
+        ),
         //     GoRoute(
         //       path: '/notifications',
         //       builder: (context, state) {

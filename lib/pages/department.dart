@@ -1,15 +1,13 @@
-import 'package:customer_care_webapp/controller/campus_controller.dart';
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
-import 'package:customer_care_webapp/models/campusinfo_model.dart';
+import 'package:customer_care_webapp/controller/department_controller.dart';
+import 'package:customer_care_webapp/models/department_model.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
-import 'package:customer_care_webapp/widgets/charts/mainrow_widget.dart';
-import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
+
 import 'package:customer_care_webapp/widgets/custom_button.dart';
 import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/customeAppDialog.dart';
 import 'package:customer_care_webapp/widgets/pageHeader.dart';
 import 'package:customer_care_webapp/widgets/textformField.dart';
-import 'package:customer_care_webapp/widgets/timing_sectio_widget.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -17,56 +15,51 @@ import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/state_manager.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class CampusInfo extends StatelessWidget {
-  const CampusInfo({super.key});
+class Department extends StatelessWidget {
+  const Department({super.key});
 
   Widget _buildFilters(BuildContext context, BoxConstraints constraints) {
     final dashboardcontroller = Get.find<DashboardController>();
-    final campusinfoCtrl = Get.find<CampusController>();
+    final departmentCtrl = Get.find<DepartmentController>();
 
     final updateStatusButton = CustomButton(
       callback: () {
-        // showDialog ke andar CustomAppDialog wrap kiya gaya hai
         showDialog(
           context: context,
           barrierColor: Colors.black.withValues(alpha: 0.3),
           builder: (dialogContext) => CustomAppDialog(
-            title: "Add Campus info",
+            title: "Add Department info",
             child: Form(
-              key: campusinfoCtrl.formkey,
+              key: departmentCtrl.formkey,
               child: Column(
                 children: [
                   Row(
                     children: [
                       Expanded(
                         child: DynamicTextFormField(
-                          labelText: "Title",
-                          controller: campusinfoCtrl.titleController,
-                          hintText: "Enter  title...",
+                          labelText: "Name",
+                          controller: departmentCtrl.titleController,
+                          hintText: "Enter name...",
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter title';
+                              return 'Please enter name';
                             }
-
                             return null;
                           },
                         ),
                       ),
-                      const SizedBox(width: 25),
+                      const SizedBox(width: 10),
                       Expanded(
-                        child: customFormDownbutton(
-                          context: context,
-                          hintText: "Select Category",
-                          labelText: "Category",
-                          selectedValue: campusinfoCtrl.selectedCategory,
-                          items: campusinfoCtrl.campusinfoCategoryList,
+                        child: DynamicTextFormField(
+                          controller: departmentCtrl.codeController,
+                          hintText: "Enter code...",
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please select category';
+                              return 'Please enter code';
                             }
-
                             return null;
                           },
+                          labelText: "Code",
                         ),
                       ),
                     ],
@@ -75,40 +68,25 @@ class CampusInfo extends StatelessWidget {
                   // Description
                   DynamicTextFormField(
                     labelText: "Description",
-                    controller: campusinfoCtrl.descriptionController,
+                    controller: departmentCtrl.descriptionController,
                     hintText: "Enter description...",
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter description';
                       }
-
                       return null;
                     },
                     minLines: 2,
                     maxLines: 4,
                     maxLength: 200,
                   ),
-                  //icon
-                  MainrowWidget(
-                    maintitle: "Contact info",
-                    controller1: campusinfoCtrl.phoneController,
-                    controller2: campusinfoCtrl.emailController,
-                    controller3: campusinfoCtrl.websiteController,
-                    mainicons: Icons.contacts_outlined,
-                    title1: "Phone",
-                    title2: "Email",
-                    title3: "Website",
-                    hitntext1: "phone..",
-                    hitntext2: "email..",
-                    hitntext3: "website..",
-                    icon1: Icons.phone_outlined,
-                    icon2: Icons.email_outlined,
-                    icon3: Icons.language_outlined,
-                    input1: TextInputType.phone,
-                    input2: TextInputType.emailAddress,
-                    input3: TextInputType.url,
-                    // Phone validation (11 digits)
-                    validator1: (value) {
+                  
+                  // Phone
+                  DynamicTextFormField(
+                    prefixicon: Icons.phone_outlined,
+                    controller: departmentCtrl.phoneController,
+                    hintText: "Enter phone...",
+                    validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Please enter phone";
                       }
@@ -118,63 +96,44 @@ class CampusInfo extends StatelessWidget {
                       }
                       return null;
                     },
-                    // Email validation
-                    validator2: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please enter email";
-                      }
-                      final emailRegex = RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      );
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return "Please enter a valid email";
-                      }
-                      return null;
-                    },
-                    // Website: No validation (Optional)
-                    validator3: null,
+                    labelText: "Phone",
+                  ),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DynamicTextFormField(
+                          prefixicon: Icons.email_outlined,
+                          labelText: "Email",
+                          controller: departmentCtrl.emailController,
+                          hintText: "Enter email...",
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "Please enter email";
+                            }
+                            final emailRegex = RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            );
+                            if (!emailRegex.hasMatch(value.trim())) {
+                              return "Please enter a valid email";
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: DynamicTextFormField(
+                          prefixicon: Icons.language_outlined,
+                          controller: departmentCtrl.websiteController,
+                          hintText: "Website...",
+                          labelText: "Website",
+                        ),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: 10),
-
-                  MainrowWidget(
-                    controller1: campusinfoCtrl.buildingController,
-                    controller2: campusinfoCtrl.floorController,
-                    controller3: campusinfoCtrl.roomController,
-                    mainicons: Icons.location_on_outlined,
-                    maintitle: "Location",
-                    title1: "Building",
-                    title2: "Floor",
-                    title3: "Room",
-                    hitntext1: "Enter building",
-                    hitntext2: "Enter floor",
-                    hitntext3: "Enter room",
-                    input1: TextInputType.text,
-                    input2: TextInputType.text,
-                    input3: TextInputType.text,
-                    // Building validation (Required)
-                    validator1: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please enter building";
-                      }
-                      return null;
-                    },
-                    // Floor validation (Required)
-                    validator2: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please enter floor";
-                      }
-                      return null;
-                    },
-                    // Room: No validation (Optional)
-                    validator3: null,
-                  ),
-
-                  const SizedBox(height: 8),
-                  //timing section
-                  timingSection(context),
-
-                  //main column
+                  // Active status
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -192,7 +151,7 @@ class CampusInfo extends StatelessWidget {
                         scale: 0.75,
                         child: Obx(
                           () => Switch(
-                            value: campusinfoCtrl.isToggled.value,
+                            value: departmentCtrl.isToggled.value,
                             activeThumbColor: Colors.white,
                             activeTrackColor: AppColors.primary,
                             inactiveThumbColor: Colors.white,
@@ -201,7 +160,7 @@ class CampusInfo extends StatelessWidget {
                               Colors.transparent,
                             ),
                             onChanged: (bool value) {
-                              campusinfoCtrl.isToggled.value = value;
+                              departmentCtrl.isToggled.value = value;
                             },
                           ),
                         ),
@@ -218,13 +177,10 @@ class CampusInfo extends StatelessWidget {
                         child: Obx(
                           () => CustomButton(
                             title: "Save Information",
-                            isLoading: campusinfoCtrl.isLoading.value,
+                            isLoading: departmentCtrl.isLoading.value,
                             callback: () async {
-                              //  Form validation check
-                              if (campusinfoCtrl.formkey.currentState!
-                                  .validate()) {
-                                //  Submit form call
-                                await campusinfoCtrl.submitform(context);
+                              if (departmentCtrl.formkey.currentState!.validate()) {
+                                await departmentCtrl.submitform(context);
                               }
                             },
                           ),
@@ -244,7 +200,6 @@ class CampusInfo extends StatelessWidget {
     if (constraints.maxWidth < 600) {
       return Column(
         children: [
-          // searchbar,
           const SizedBox(height: 10),
           SizedBox(width: double.infinity, child: updateStatusButton),
         ],
@@ -253,7 +208,6 @@ class CampusInfo extends StatelessWidget {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Expanded(child: searchbar),
           const SizedBox(width: 10),
           updateStatusButton,
         ],
@@ -263,7 +217,6 @@ class CampusInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -271,8 +224,8 @@ class CampusInfo extends StatelessWidget {
 
           final headerAndFilters =
               PageHeader(
-                    title: "Campus Information",
-                    subtitle: "Manage all Campus info",
+                    title: "Departments",
+                    subtitle: "Manage all departments",
                     widget: _buildFilters(context, constraints),
                   )
                   .animate()
@@ -311,14 +264,13 @@ class CampusInfo extends StatelessWidget {
   }
 }
 
-// tabels
-// tabels
-class CampusInfoTableSource extends DataTableSource {
-  final campusinfoCtrl = Get.find<CampusController>();
-  final List<CampusInformationModel> data;
+// Table source
+class DepartmentTableSource extends DataTableSource {
+  final departmentCtrl = Get.find<DepartmentController>();
+  final List<DepartmentModel> data;
   final BuildContext context;
 
-  CampusInfoTableSource({required this.data, required this.context});
+  DepartmentTableSource({required this.data, required this.context});
 
   @override
   DataRow? getRow(int index) {
@@ -326,7 +278,7 @@ class CampusInfoTableSource extends DataTableSource {
       return DataRow.byIndex(
         index: index,
         cells: List.generate(
-          8,
+          6,
           (i) => const DataCell(
             Skeletonizer(
               enabled: true,
@@ -336,70 +288,26 @@ class CampusInfoTableSource extends DataTableSource {
         ),
       );
     }
-    // Current row ka specific object nikala
     final info = data[index];
-
-    // Location string helper
-    final building = info.building ?? '';
-    final floor = info.floor ?? '';
-    final room = info.room ?? '';
-    final locationParts = [
-      if (building.isNotEmpty) building,
-      if (floor.isNotEmpty || room.isNotEmpty)
-        '${floor.isNotEmpty ? 'Floor $floor' : ''}${floor.isNotEmpty && room.isNotEmpty ? ', ' : ''}${room.isNotEmpty ? 'R-$room' : ''}',
-    ];
-    final locationStr = locationParts.isEmpty ? '-' : locationParts.join('\n');
 
     // Contact string helper
     final phone = info.phone ?? '';
     final email = info.email ?? '';
+    final website = info.website ?? '';
     final contactParts = [
       if (phone.isNotEmpty) phone,
       if (email.isNotEmpty) email,
+      if (website.isNotEmpty) website,
     ];
     final contactStr = contactParts.isEmpty ? '-' : contactParts.join('\n');
-
-    // Timings formatter
-    List<String> timingList = [];
-    final daysOrder = [
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-    ];
-    final dayAbbr = {
-      'monday': 'Mon',
-      'tuesday': 'Tue',
-      'wednesday': 'Wed',
-      'thursday': 'Thu',
-      'friday': 'Fri',
-      'saturday': 'Sat',
-    };
-    if (info.timings != null) {
-      for (final day in daysOrder) {
-        final dayData = info.timings![day];
-        if (dayData != null && dayData['isOpen'] == true) {
-          final open = dayData['open'] ?? '';
-          final close = dayData['close'] ?? '';
-          if (open.isNotEmpty && close.isNotEmpty) {
-            timingList.add('${dayAbbr[day]} $open-$close');
-          }
-        }
-      }
-    }
-    final timingsStr = timingList.isEmpty ? 'Closed' : timingList.join('\n');
 
     return DataRow.byIndex(
       index: index,
       cells: [
-        DataCell(Text(info.title ?? '-')),
+        DataCell(Text(info.name ?? '-')),
+        DataCell(Text(info.code ?? '-')),
         DataCell(Text(info.description ?? '-')),
-        DataCell(Text(info.category ?? '-')),
         DataCell(Text(contactStr)),
-        DataCell(Text(locationStr)),
-        DataCell(Text(timingsStr)),
         DataCell(
           Transform.scale(
             scale: 0.75,
@@ -411,7 +319,7 @@ class CampusInfoTableSource extends DataTableSource {
               inactiveTrackColor: Colors.red,
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
               onChanged: (bool value) {
-                campusinfoCtrl.togglePublishStatus(info, value);
+                departmentCtrl.togglePublishStatus(info, value);
               },
             ),
           ),
@@ -419,7 +327,7 @@ class CampusInfoTableSource extends DataTableSource {
         DataCell(
           TableActions(
             onDelete: () {
-              campusinfoCtrl.deleteCampusInfo(info);
+              departmentCtrl.deleteDepartmentInfo(info);
               debugPrint("Delete tapped for: ${info.id}");
             },
           ),
@@ -430,46 +338,46 @@ class CampusInfoTableSource extends DataTableSource {
 
   @override
   bool get isRowCountApproximate =>
-      (campusinfoCtrl.isLoading.value && campusinfoCtrl.campusInfoList.isEmpty)
+      (departmentCtrl.isLoading.value && departmentCtrl.departmentList.isEmpty)
       ? false
-      : campusinfoCtrl.hasNextPage.value;
+      : departmentCtrl.hasNextPage.value;
 
   @override
   int get rowCount =>
-      (campusinfoCtrl.isLoading.value && campusinfoCtrl.campusInfoList.isEmpty)
+      (departmentCtrl.isLoading.value && departmentCtrl.departmentList.isEmpty)
       ? data.length
-      : (campusinfoCtrl.hasNextPage.value ? data.length + 1 : data.length);
+      : (departmentCtrl.hasNextPage.value ? data.length + 1 : data.length);
 
   @override
   int get selectedRowCount => 0;
 }
 
-// table builder by using custom widget
+// Table UI builder
 Widget _buildUI(BuildContext context, {required bool isMobile}) {
   final dashboardcontroller = Get.find<DashboardController>();
-  final campusinfoCtrl = Get.find<CampusController>();
+  final departmentCtrl = Get.find<DepartmentController>();
 
   final textTheme = Theme.of(context).textTheme;
 
   return Obx(() {
     final isDark = dashboardcontroller.isDarkMode.value;
     final showSkeleton =
-        campusinfoCtrl.isLoading.value && campusinfoCtrl.campusInfoList.isEmpty;
-    //Agar data load ho raha hai to Dummy List, warna Firebase wali List
-    final campusData = showSkeleton
+        departmentCtrl.isLoading.value && departmentCtrl.departmentList.isEmpty;
+    
+    final deptData = showSkeleton
         ? List.generate(
-            campusinfoCtrl.pageSize,
-            (index) => CampusInformationModel(
+            departmentCtrl.pageSize,
+            (index) => DepartmentModel(
               id: 'dummy_$index',
-              title: 'Campus Info ${index + 1}',
-              description: 'This is a description for campus info ${index + 1}',
-              category: 'Other',
+              name: 'Department ${index + 1}',
+              code: 'DEPT${index + 1}',
+              description: 'This is a description for department ${index + 1}',
               isActive: index % 2 == 0,
               createdAt: DateTime.now().subtract(Duration(days: index)),
               updatedAt: DateTime.now().subtract(Duration(days: index)),
             ),
           )
-        : campusinfoCtrl.campusInfoList.toList();
+        : departmentCtrl.departmentList.toList();
 
     return Skeletonizer(
       enabled: showSkeleton,
@@ -479,39 +387,31 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
                 isMobile: isMobile,
                 minWidth: 1000,
                 onPageChanged: (rowIndex) {
-                  if (rowIndex + campusinfoCtrl.pageSize >=
-                      campusinfoCtrl.campusInfoList.length) {
-                    campusinfoCtrl.fetchNextPage();
+                  if (rowIndex + departmentCtrl.pageSize >=
+                      departmentCtrl.departmentList.length) {
+                    departmentCtrl.fetchNextPage();
                     debugPrint("Next page fetched for row index: $rowIndex");
                   }
                 },
-                source: CampusInfoTableSource(
+                source: DepartmentTableSource(
                   context: context,
-                  data: campusData,
+                  data: deptData,
                 ),
                 columns: [
                   DataColumn2(
-                    label: Text("Title", style: textTheme.bodySmall),
+                    label: Text("Name", style: textTheme.bodySmall),
                     size: ColumnSize.M,
+                  ),
+                  DataColumn2(
+                    label: Text("Code", style: textTheme.bodySmall),
+                    size: ColumnSize.S,
                   ),
                   DataColumn2(
                     label: Text("Description", style: textTheme.bodySmall),
                     size: ColumnSize.L,
                   ),
                   DataColumn2(
-                    label: Text("Category", style: textTheme.bodySmall),
-                    size: ColumnSize.M,
-                  ),
-                  DataColumn2(
                     label: Text("Contact", style: textTheme.bodySmall),
-                    size: ColumnSize.M,
-                  ),
-                  DataColumn2(
-                    label: Text("Location", style: textTheme.bodySmall),
-                    size: ColumnSize.M,
-                  ),
-                  DataColumn2(
-                    label: Text("Timings", style: textTheme.bodySmall),
                     size: ColumnSize.M,
                   ),
                   DataColumn2(
@@ -536,7 +436,7 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
   });
 }
 
-//edit and delete
+// Edit and delete actions
 class TableActions extends StatelessWidget {
   final VoidCallback? onDelete;
 
@@ -548,7 +448,6 @@ class TableActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        //  Delete
         Tooltip(
           message: 'Delete',
           child: InkWell(

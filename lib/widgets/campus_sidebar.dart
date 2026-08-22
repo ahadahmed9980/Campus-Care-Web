@@ -147,9 +147,9 @@ class CampusSidebar extends StatelessWidget {
           onTap: () => _handleNavigation(context, '/categories'),
         ),
         SidebarXItem(
-          icon: Icons.insert_chart_outlined,
-          label: 'Reports',
-          onTap: () => _handleNavigation(context, '/reports'),
+          icon: Icons.school_outlined,
+          label: 'Departments',
+          onTap: () => _handleNavigation(context, '/departments'),
         ),
         SidebarXItem(
           icon: Icons.notifications_none_outlined,
