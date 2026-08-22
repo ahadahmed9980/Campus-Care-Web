@@ -1,7 +1,7 @@
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 
 class AppTheme {
   static ThemeData get lightTheme => ThemeData(
@@ -18,33 +18,37 @@ class AppTheme {
     textTheme: GoogleFonts.poppinsTextTheme(
       TextTheme(
         headlineLarge: TextStyle(
-          fontSize: 25.sp,
+          fontSize: 25,
           fontWeight: FontWeight.bold,
           color: AppColors.lightText,
         ),
         headlineMedium: TextStyle(
-          fontSize: 22.sp,
+          fontSize: 22,
           fontWeight: FontWeight.w600,
           color: AppColors.lightText,
         ),
         bodyLarge: TextStyle(
-          fontSize: 18.sp,
+          fontSize: 18,
           height: 1.5,
           color: AppColors.lightText,
+
+          // fontWeight: FontWeight.w600
         ),
-        bodyMedium: TextStyle(
-          fontSize: 10.sp,
-          height: 1.2,
-          color: AppColors.grey,
+        bodySmall: TextStyle(
+          fontSize: 15,
+          height: 1.5,
+          color: AppColors.lightText,
+          fontWeight: FontWeight.w900,
         ),
+        bodyMedium: TextStyle(fontSize: 10, height: 1.2, color: AppColors.grey),
         labelLarge: TextStyle(
-          fontSize: 12.sp,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.8,
           color: AppColors.lightText,
         ),
         labelSmall: TextStyle(
-          fontSize: 8.sp,
+          fontSize: 8,
           fontWeight: FontWeight.w300,
           letterSpacing: 0.8,
           color: AppColors.grey,
@@ -79,33 +83,35 @@ class AppTheme {
     textTheme: GoogleFonts.poppinsTextTheme(
       TextTheme(
         headlineLarge: TextStyle(
-          fontSize: 25.sp,
+          fontSize: 25,
           fontWeight: FontWeight.bold,
           color: AppColors.darkText,
         ),
         headlineMedium: TextStyle(
-          fontSize: 22.sp,
+          fontSize: 22,
           fontWeight: FontWeight.w600,
           color: AppColors.darkText,
         ),
         bodyLarge: TextStyle(
-          fontSize: 18.sp,
+          fontSize: 18,
           height: 1.5,
           color: AppColors.darkText,
         ),
-        bodyMedium: TextStyle(
-          fontSize: 12.sp,
-          height: 1.2,
-          color: AppColors.grey,
+        bodyMedium: TextStyle(fontSize: 12, height: 1.2, color: AppColors.grey),
+        bodySmall: TextStyle(
+          fontSize: 15,
+          height: 1.5,
+          color: AppColors.darkText,
+          fontWeight: FontWeight.w900,
         ),
         labelLarge: TextStyle(
-          fontSize: 12.sp,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.8,
-          color: AppColors.lightText,
+          color: AppColors.darkText,
         ),
         labelSmall: TextStyle(
-          fontSize: 8.sp,
+          fontSize: 8,
           fontWeight: FontWeight.w300,
           letterSpacing: 0.8,
           color: AppColors.grey,

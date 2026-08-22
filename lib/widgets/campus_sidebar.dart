@@ -69,9 +69,7 @@ class CampusSidebar extends StatelessWidget {
             right: 16,
           ),
           child: Row(
-            mainAxisAlignment: extended
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Image.asset(
                 "assets/images/logo.png",
@@ -149,9 +147,9 @@ class CampusSidebar extends StatelessWidget {
           onTap: () => _handleNavigation(context, '/categories'),
         ),
         SidebarXItem(
-          icon: Icons.insert_chart_outlined,
-          label: 'Reports',
-          onTap: () => _handleNavigation(context, '/reports'),
+          icon: Icons.school_outlined,
+          label: 'Departments',
+          onTap: () => _handleNavigation(context, '/departments'),
         ),
         SidebarXItem(
           icon: Icons.notifications_none_outlined,
@@ -172,9 +170,7 @@ class CampusSidebar extends StatelessWidget {
             border: Border(top: BorderSide(color: Colors.white12, width: 1)),
           ),
           child: Row(
-            mainAxisAlignment: extended
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Stack(
                 children: [
