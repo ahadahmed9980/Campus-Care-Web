@@ -7,6 +7,9 @@ import 'package:get/get_instance/src/extension_instance.dart';
 class DynamicTextFormField extends StatefulWidget {
   final TextEditingController controller;
   final String? labelText;
+  final double? horizontalwidth;
+  final double? verticalheigh;
+
   final String hintText;
   final VoidCallback? callback;
 
@@ -34,7 +37,7 @@ class DynamicTextFormField extends StatefulWidget {
     this.minLines,
     this.maxLines,
     this.maxLength,
-    this.readOnly = false,
+    this.readOnly = false, this.horizontalwidth, this.verticalheigh,
   });
 
   @override
@@ -111,9 +114,9 @@ class _DynamicTextFormFieldState extends State<DynamicTextFormField> {
                     )
                   : null,
 
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: widget.horizontalwidth ?? 16,
+                vertical: widget.verticalheigh ?? 10,
               ),
 
               enabledBorder: OutlineInputBorder(

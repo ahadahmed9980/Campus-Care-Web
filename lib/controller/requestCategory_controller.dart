@@ -77,57 +77,7 @@ class RequestcategoryController extends GetxController {
       isLoading.value = false;
     }
   }
-//   Future<void> fetchfirstPage({bool forceRefresh = false}) async {
-//   if (isLoading.value) return;
 
-//   if (requestCategoryList.isNotEmpty && !forceRefresh) return;
-
-//   try {
-//     isLoading.value = true;
-
-//     debugPrint("FETCH STARTED");
-
-//     if (forceRefresh) {
-//       lastDocument = null;
-//       hasNextPage.value = true;
-//     }
-
-//     final snapshot =
-//         await _requestCategoriesService.fetchRequestCategory(
-//       limit: pageSize,
-//     );
-
-//     debugPrint("DOCUMENTS FOUND: ${snapshot.docs.length}");
-
-//     for (final doc in snapshot.docs) {
-//       debugPrint("DOC ID: ${doc.id}");
-//       debugPrint("DOC DATA: ${doc.data()}");
-//     }
-
-//     final fetchedList = snapshot.docs.map((doc) {
-//       return RequestCategoryModel.fromMap(
-//         doc.data(),
-//         docId: doc.id,
-//       );
-//     }).toList();
-
-//     debugPrint("MODEL LIST LENGTH: ${fetchedList.length}");
-
-//     requestCategoryList.assignAll(fetchedList);
-
-//     if (snapshot.docs.isNotEmpty) {
-//       lastDocument = snapshot.docs.last;
-//     }
-
-//     hasNextPage.value = snapshot.docs.length == pageSize;
-//   } catch (err, stackTrace) {
-//     debugPrint("ERROR FETCHING CATEGORIES: $err");
-//     debugPrint("$stackTrace");
-//   } finally {
-//     isLoading.value = false;
-//     debugPrint("FETCH FINISHED");
-//   }
-// }
 
   Future<void> fetchNextPage() async {
     if (!hasNextPage.value || lastDocument == null || isLoading.value) {

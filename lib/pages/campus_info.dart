@@ -1,7 +1,6 @@
 import 'package:customer_care_webapp/controller/campus_controller.dart';
-import 'package:customer_care_webapp/controller/requestCategory_controller.dart';
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
-import 'package:customer_care_webapp/models/request_Category_model.dart';
+import 'package:customer_care_webapp/models/campusinfo_model.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/widgets/charts/mainrow_widget.dart';
 import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
@@ -9,12 +8,12 @@ import 'package:customer_care_webapp/widgets/custom_button.dart';
 import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/customeAppDialog.dart';
 import 'package:customer_care_webapp/widgets/textformField.dart';
+import 'package:customer_care_webapp/widgets/timing_sectio_widget.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/state_manager.dart';
-import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class CampusInfo extends StatelessWidget {
@@ -22,7 +21,6 @@ class CampusInfo extends StatelessWidget {
 
   Widget _buildFilters(BuildContext context, BoxConstraints constraints) {
     final dashboardcontroller = Get.find<DashboardController>();
-    final requestcategorycontroller = Get.find<RequestcategoryController>();
     final campusinfoCtrl = Get.find<CampusController>();
 
     // final searchbar = CustomSearchbar(
@@ -37,9 +35,9 @@ class CampusInfo extends StatelessWidget {
           context: context,
           barrierColor: Colors.black.withValues(alpha: 0.3),
           builder: (dialogContext) => CustomAppDialog(
-            title: "Add Categories",
+            title: "Add Campus info",
             child: Form(
-              key: requestcategorycontroller.formkey,
+              key: campusinfoCtrl.formkey,
               child: Column(
                 children: [
                   Row(
@@ -96,6 +94,7 @@ class CampusInfo extends StatelessWidget {
                   ),
                   //icon
                   MainrowWidget(
+                    maintitle: "Contact info",
                     controller1: campusinfoCtrl.phoneController,
                     controller2: campusinfoCtrl.emailController,
                     controller3: campusinfoCtrl.websiteController,
@@ -106,39 +105,87 @@ class CampusInfo extends StatelessWidget {
                     hitntext1: "phone..",
                     hitntext2: "email..",
                     hitntext3: "website..",
-                    validate1: "please enter phone",
-                    validate2: "please enter email",
                     icon1: Icons.phone_outlined,
                     icon2: Icons.email_outlined,
                     icon3: Icons.language_outlined,
-                    input1: TextInputType.number,
+                    input1: TextInputType.phone,
                     input2: TextInputType.emailAddress,
+                    input3: TextInputType.url,
+                    // Phone validation (11 digits)
+                    validator1: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return "Please enter phone";
+                      }
+                      final cleanValue = value.trim();
+                      if (!RegExp(r'^[0-9]{11}$').hasMatch(cleanValue)) {
+                        return "Phone must be exactly 11 digits";
+                      }
+                      return null;
+                    },
+                    // Email validation
+                    validator2: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return "Please enter email";
+                      }
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      );
+                      if (!emailRegex.hasMatch(value.trim())) {
+                        return "Please enter a valid email";
+                      }
+                      return null;
+                    },
+                    // Website: No validation (Optional)
+                    validator3: null,
                   ),
+
+                  const SizedBox(height: 10),
+
                   MainrowWidget(
                     controller1: campusinfoCtrl.buildingController,
                     controller2: campusinfoCtrl.floorController,
                     controller3: campusinfoCtrl.roomController,
                     mainicons: Icons.location_on_outlined,
+                    maintitle: "Location",
                     title1: "Building",
                     title2: "Floor",
                     title3: "Room",
                     hitntext1: "Enter building",
                     hitntext2: "Enter floor",
                     hitntext3: "Enter room",
-                    validate1: "Please enter building",
-                    validate2: "Please enter floor",
-                    // icon1: null,
-                    // icon2: null,
-                    // icon3: null,
                     input1: TextInputType.text,
                     input2: TextInputType.text,
+                    input3: TextInputType.text,
+                    // Building validation (Required)
+                    validator1: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return "Please enter building";
+                      }
+                      return null;
+                    },
+                    // Floor validation (Required)
+                    validator2: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return "Please enter floor";
+                      }
+                      return null;
+                    },
+                    // Room: No validation (Optional)
+                    validator3: null,
                   ),
 
+                  const SizedBox(height: 8),
+                  //timing section 
+                  timingSection(context),
+
+
+
+                  //main column 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Published",
+                        "Active",
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w900,
@@ -151,7 +198,7 @@ class CampusInfo extends StatelessWidget {
                         scale: 0.75,
                         child: Obx(
                           () => Switch(
-                            value: requestcategorycontroller.isToggled.value,
+                            value: campusinfoCtrl.isToggled.value,
                             activeThumbColor: Colors.white,
                             activeTrackColor: AppColors.primary,
                             inactiveThumbColor: Colors.white,
@@ -160,7 +207,7 @@ class CampusInfo extends StatelessWidget {
                               Colors.transparent,
                             ),
                             onChanged: (bool value) {
-                              requestcategorycontroller.isToggled.value = value;
+                              campusinfoCtrl.isToggled.value = value;
                             },
                           ),
                         ),
@@ -176,17 +223,17 @@ class CampusInfo extends StatelessWidget {
                       Flexible(
                         child: Obx(
                           () => CustomButton(
-                            title: "Publish Category",
+                            title: "Save Information",
                             isLoading:
-                                requestcategorycontroller.isLoading.value,
+                                campusinfoCtrl.isLoading.value,
                             callback: () async {
                               //  Form validation check
-                              if (requestcategorycontroller
+                              if (campusinfoCtrl
                                   .formkey
                                   .currentState!
                                   .validate()) {
                                 //  Submit form call
-                                await requestcategorycontroller.submitform(
+                                await campusinfoCtrl.submitform(
                                   context,
                                 );
                               }
@@ -309,12 +356,13 @@ class CampusInfo extends StatelessWidget {
 }
 
 // tabels
-class RequestCategoryTableSource extends DataTableSource {
-  final requestcategorycontroller = Get.find<RequestcategoryController>();
-  final List<RequestCategoryModel> data;
+// tabels
+class CampusInfoTableSource extends DataTableSource {
+  final campusinfoCtrl = Get.find<CampusController>();
+  final List<CampusInformationModel> data;
   final BuildContext context;
 
-  RequestCategoryTableSource({required this.data, required this.context});
+  CampusInfoTableSource({required this.data, required this.context});
 
   @override
   DataRow? getRow(int index) {
@@ -322,7 +370,7 @@ class RequestCategoryTableSource extends DataTableSource {
       return DataRow.byIndex(
         index: index,
         cells: List.generate(
-          5,
+          8,
           (i) => const DataCell(
             Skeletonizer(
               enabled: true,
@@ -333,36 +381,75 @@ class RequestCategoryTableSource extends DataTableSource {
       );
     }
     // Current row ka specific object nikala
+    final info = data[index];
 
-    final requestCategory = data[index];
+    // Location string helper
+    final building = info.building ?? '';
+    final floor = info.floor ?? '';
+    final room = info.room ?? '';
+    final locationParts = [
+      if (building.isNotEmpty) building,
+      if (floor.isNotEmpty || room.isNotEmpty)
+        '${floor.isNotEmpty ? 'Floor $floor' : ''}${floor.isNotEmpty && room.isNotEmpty ? ', ' : ''}${room.isNotEmpty ? 'R-$room' : ''}'
+    ];
+    final locationStr = locationParts.isEmpty ? '-' : locationParts.join('\n');
+
+    // Contact string helper
+    final phone = info.phone ?? '';
+    final email = info.email ?? '';
+    final contactParts = [
+      if (phone.isNotEmpty) phone,
+      if (email.isNotEmpty) email,
+    ];
+    final contactStr = contactParts.isEmpty ? '-' : contactParts.join('\n');
+
+    // Timings formatter
+    List<String> timingList = [];
+    final daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    final dayAbbr = {
+      'monday': 'Mon',
+      'tuesday': 'Tue',
+      'wednesday': 'Wed',
+      'thursday': 'Thu',
+      'friday': 'Fri',
+      'saturday': 'Sat',
+    };
+    if (info.timings != null) {
+      for (final day in daysOrder) {
+        final dayData = info.timings![day];
+        if (dayData != null && dayData['isOpen'] == true) {
+          final open = dayData['open'] ?? '';
+          final close = dayData['close'] ?? '';
+          if (open.isNotEmpty && close.isNotEmpty) {
+            timingList.add('${dayAbbr[day]} $open-$close');
+          }
+        }
+      }
+    }
+    final timingsStr = timingList.isEmpty ? 'Closed' : timingList.join('\n');
 
     return DataRow.byIndex(
       index: index,
       cells: [
-        DataCell(Text(requestCategory.name)),
-        DataCell(Text(requestCategory.description)),
-
-        DataCell(
-          Text(
-            requestCategory.createdAt != null
-                ? DateFormat('dd-MM-yyyy').format(requestCategory.createdAt!)
-                : '-',
-          ),
-        ),
+        DataCell(Text(info.title ?? '-')),
+        DataCell(Text(info.description ?? '-')),
+        DataCell(Text(info.category ?? '-')),
+        DataCell(Text(contactStr)),
+        DataCell(Text(locationStr)),
+        DataCell(Text(timingsStr)),
         DataCell(
           Transform.scale(
             scale: 0.75,
             child: Switch(
-              value: requestCategory.isActive,
+              value: info.isActive,
               activeThumbColor: Colors.white,
               activeTrackColor: AppColors.primary,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.red,
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
               onChanged: (bool value) {
-                //Jab Switch click ho, to pura object aur nayi value controller ko bhej di
-                requestcategorycontroller.togglePublishStatus(
-                  requestCategory,
+                campusinfoCtrl.togglePublishStatus(
+                  info,
                   value,
                 );
               },
@@ -372,8 +459,8 @@ class RequestCategoryTableSource extends DataTableSource {
         DataCell(
           TableActions(
             onDelete: () {
-              requestcategorycontroller.deleteCategory(requestCategory);
-              debugPrint("Delete tapped for: ${requestCategory.id}");
+              campusinfoCtrl.deleteCampusInfo(info);
+              debugPrint("Delete tapped for: ${info.id}");
             },
           ),
         ),
@@ -383,17 +470,17 @@ class RequestCategoryTableSource extends DataTableSource {
 
   @override
   bool get isRowCountApproximate =>
-      (requestcategorycontroller.isLoading.value &&
-          requestcategorycontroller.requestCategoryList.isEmpty)
+      (campusinfoCtrl.isLoading.value &&
+          campusinfoCtrl.campusInfoList.isEmpty)
       ? false
-      : requestcategorycontroller.hasNextPage.value;
+      : campusinfoCtrl.hasNextPage.value;
 
   @override
   int get rowCount =>
-      (requestcategorycontroller.isLoading.value &&
-          requestcategorycontroller.requestCategoryList.isEmpty)
+      (campusinfoCtrl.isLoading.value &&
+          campusinfoCtrl.campusInfoList.isEmpty)
       ? data.length
-      : (requestcategorycontroller.hasNextPage.value
+      : (campusinfoCtrl.hasNextPage.value
             ? data.length + 1
             : data.length);
 
@@ -404,30 +491,30 @@ class RequestCategoryTableSource extends DataTableSource {
 // table builder by using custom widget
 Widget _buildUI(BuildContext context, {required bool isMobile}) {
   final dashboardcontroller = Get.find<DashboardController>();
-  final requestcategorycontroller = Get.find<RequestcategoryController>();
+  final campusinfoCtrl = Get.find<CampusController>();
 
   final textTheme = Theme.of(context).textTheme;
 
   return Obx(() {
     final isDark = dashboardcontroller.isDarkMode.value;
     final showSkeleton =
-        requestcategorycontroller.isLoading.value &&
-        requestcategorycontroller.requestCategoryList.isEmpty;
+        campusinfoCtrl.isLoading.value &&
+        campusinfoCtrl.campusInfoList.isEmpty;
     //Agar data load ho raha hai to Dummy List, warna Firebase wali List
-    final requestCata = showSkeleton
+    final campusData = showSkeleton
         ? List.generate(
-            requestcategorycontroller.pageSize,
-            (index) => RequestCategoryModel(
+            campusinfoCtrl.pageSize,
+            (index) => CampusInformationModel(
               id: 'dummy_$index',
-              name: 'Category ${index + 1}',
-              description: 'This is a description for category ${index + 1}',
+              title: 'Campus Info ${index + 1}',
+              description: 'This is a description for campus info ${index + 1}',
+              category: 'Other',
               isActive: index % 2 == 0,
               createdAt: DateTime.now().subtract(Duration(days: index)),
               updatedAt: DateTime.now().subtract(Duration(days: index)),
             ),
           )
-        //list in announcement controller
-        : requestcategorycontroller.requestCategoryList.toList();
+        : campusinfoCtrl.campusInfoList.toList();
 
     return Skeletonizer(
       enabled: showSkeleton,
@@ -437,31 +524,41 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
                 isMobile: isMobile,
                 minWidth: 1000,
                 onPageChanged: (rowIndex) {
-                  if (rowIndex + requestcategorycontroller.pageSize >=
-                      requestcategorycontroller.requestCategoryList.length) {
-                    requestcategorycontroller.fetchNextPage();
+                  if (rowIndex + campusinfoCtrl.pageSize >=
+                      campusinfoCtrl.campusInfoList.length) {
+                    campusinfoCtrl.fetchNextPage();
                     debugPrint("Next page fetched for row index: $rowIndex");
                   }
                 },
-                source: RequestCategoryTableSource(
-                  //we are passing data to the announcement table widget
+                source: CampusInfoTableSource(
                   context: context,
-                  data: requestCata,
+                  data: campusData,
                 ),
                 columns: [
                   DataColumn2(
-                    label: Text("Category Name", style: textTheme.bodySmall),
+                    label: Text("Title", style: textTheme.bodySmall),
                     size: ColumnSize.M,
                   ),
                   DataColumn2(
                     label: Text("Description", style: textTheme.bodySmall),
+                    size: ColumnSize.L,
+                  ),
+                  DataColumn2(
+                    label: Text("Category", style: textTheme.bodySmall),
                     size: ColumnSize.M,
                   ),
                   DataColumn2(
-                    label: Text("Created At", style: textTheme.bodySmall),
-                    size: ColumnSize.L,
+                    label: Text("Contact", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
                   ),
-
+                  DataColumn2(
+                    label: Text("Location", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
+                  ),
+                  DataColumn2(
+                    label: Text("Timings", style: textTheme.bodySmall),
+                    size: ColumnSize.M,
+                  ),
                   DataColumn2(
                     label: Text("Status", style: textTheme.bodySmall),
                     size: ColumnSize.M,

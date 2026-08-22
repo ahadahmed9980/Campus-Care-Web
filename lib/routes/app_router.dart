@@ -62,8 +62,6 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/campus-information',
           builder: (context, state) {
-            RequestcategoryBinding().dependencies();
-
             CampusBinding().dependencies();
             return CampusInfo();
           },
