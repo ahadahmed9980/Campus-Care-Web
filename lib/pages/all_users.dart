@@ -1,9 +1,7 @@
 import 'package:customer_care_webapp/controller/all_usersController.dart';
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
 import 'package:customer_care_webapp/models/user_model.dart';
-import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
-import 'package:customer_care_webapp/widgets/custom_button.dart';
 import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/custom_searchbar.dart';
 import 'package:data_table_2/data_table_2.dart';
@@ -22,27 +20,18 @@ class AllUsers extends StatelessWidget {
     final searchbar = CustomSearchbar(
       hinttext: "search users",
       searchcontroller: allusercontroller.searchcontroller,
-    );
-
-    final updateStatusButton = CustomButton(
-      callback: () {},
-      title: "Update status",
+      onChanged: (value) {
+        allusercontroller.searchUsers(value);
+      },
     );
 
     if (constraints.maxWidth < 600) {
-      return Column(
-        children: [
-          searchbar,
-          const SizedBox(height: 10),
-          SizedBox(width: double.infinity, child: updateStatusButton),
-        ],
-      );
+      return Column(children: [searchbar, const SizedBox(height: 10)]);
     } else {
       return Row(
         children: [
           Expanded(child: searchbar),
           const SizedBox(width: 10),
-          updateStatusButton,
         ],
       );
     }
@@ -129,10 +118,14 @@ class UsersTableSource extends DataTableSource {
         DataCell(Text(user.department ?? '')),
         DataCell(Text(user.semester?.toString() ?? '')),
         DataCell(
-          TableActions(
-            onDelete: () {
-              debugPrint("Delete tapped for: ${user.id}");
-            },
+          Obx(
+            () => TableActions(
+              isDeleting: allusercontroller.deletingId.value == user.id,
+              onDelete: () {
+                allusercontroller.deleteUser(user);
+                debugPrint("Delete tapped for: ${user.id}");
+              },
+            ),
           ),
         ),
       ],
@@ -237,8 +230,9 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
 //edit and delete
 class TableActions extends StatelessWidget {
   final VoidCallback? onDelete;
+  final bool isDeleting;
 
-  const TableActions({super.key, this.onDelete});
+  const TableActions({super.key, this.onDelete, this.isDeleting = false});
 
   @override
   Widget build(BuildContext context) {
@@ -250,15 +244,29 @@ class TableActions extends StatelessWidget {
         Tooltip(
           message: 'Delete',
           child: InkWell(
-            onTap: onDelete,
+            onTap: isDeleting ? null : onDelete,
             borderRadius: BorderRadius.circular(6),
-            child: const Padding(
-              padding: EdgeInsets.all(4.0),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                size: 25,
-                color: Color(0xFFEF5350),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: isDeleting
+                  ? const SizedBox(
+                      width: 25,
+                      height: 25,
+                      child: Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFFEF5350),
+                          ),
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 25,
+                      color: Color(0xFFEF5350),
+                    ),
             ),
           ),
         ),

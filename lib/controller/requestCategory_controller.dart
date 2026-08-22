@@ -14,6 +14,7 @@ class RequestcategoryController extends GetxController {
   TextEditingController descriptionController = TextEditingController();
   var isToggled = false.obs;
   var isLoading = false.obs;
+  var deletingId = "".obs;
   final RequestCategoriesService _requestCategoriesService =
       RequestCategoriesService();
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
@@ -220,6 +221,7 @@ class RequestcategoryController extends GetxController {
   Future<void> deleteCategory(RequestCategoryModel item) async {
     if (item.id == null || item.id!.isEmpty) return;
     try {
+      deletingId.value = item.id!;
       await FirebaseFirestore.instance
           .collection("requestCategories")
           .doc(item.id)
@@ -244,6 +246,58 @@ class RequestcategoryController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      deletingId.value = "";
+    }
+  }
+
+  Future<void> searchCategories(String queryVal) async {
+    final queryText = queryVal.trim();
+    if (queryText.isEmpty) {
+      fetchfirstPage(forceRefresh: true);
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      final capitalizedQuery = queryText.isEmpty 
+          ? "" 
+          : queryText[0].toUpperCase() + queryText.substring(1);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection("requestCategories")
+          .where('name', isGreaterThanOrEqualTo: queryText)
+          .where('name', isLessThanOrEqualTo: '$queryText\uf8ff')
+          .limit(pageSize)
+          .get();
+
+      final list = snapshot.docs.map((doc) {
+        return RequestCategoryModel.fromMap(doc.data(), docId: doc.id);
+      }).toList();
+
+      if (capitalizedQuery != queryText) {
+        final capSnapshot = await FirebaseFirestore.instance
+            .collection("requestCategories")
+            .where('name', isGreaterThanOrEqualTo: capitalizedQuery)
+            .where('name', isLessThanOrEqualTo: '$capitalizedQuery\uf8ff')
+            .limit(pageSize)
+            .get();
+            
+        for (var doc in capSnapshot.docs) {
+          final cat = RequestCategoryModel.fromMap(doc.data(), docId: doc.id);
+          if (!list.any((c) => c.id == cat.id)) {
+            list.add(cat);
+          }
+        }
+      }
+
+      requestCategoryList.assignAll(list);
+      lastDocument = null;
+      hasNextPage.value = false;
+    } catch (e) {
+      debugPrint("Error searching categories: $e");
+    } finally {
+      isLoading.value = false;
     }
   }
 }

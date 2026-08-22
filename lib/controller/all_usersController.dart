@@ -2,8 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/user_model.dart';
 import 'package:customer_care_webapp/services/user_service.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_rx/src/rx_types/rx_types.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
+import 'package:get/get.dart';
 
 class AllUserscontroller extends GetxController {
   TextEditingController searchcontroller = TextEditingController();
@@ -12,6 +11,7 @@ class AllUserscontroller extends GetxController {
   
   RxList<UserModel> userList = <UserModel>[].obs;
   var isLoading = false.obs;
+  var deletingId = "".obs;
   int pageSize = 5;
   
  
@@ -84,6 +84,94 @@ class AllUserscontroller extends GetxController {
       debugPrint("Error fetching next page: $err");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> searchUsers(String queryVal) async {
+    final queryText = queryVal.trim();
+    if (queryText.isEmpty) {
+      fetchfirstPage(forceRefresh: true);
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      //captial the first word
+      final capitalizedQuery = queryText.isEmpty 
+          ? "" 
+          : queryText[0].toUpperCase() + queryText.substring(1);
+//search
+      final snapshot = await FirebaseFirestore.instance
+          .collection("users")
+          .where('fullName', isGreaterThanOrEqualTo: queryText)
+          .where('fullName', isLessThanOrEqualTo: '$queryText\uf8ff')
+          .limit(pageSize)
+          .get();
+          //converting to object so we can use it
+
+      final list = snapshot.docs.map((doc) {
+        return UserModel.fromMap(doc.data(), docId: doc.id);
+      }).toList();
+      //checking if user eter small if its available in db show it 
+
+      if (capitalizedQuery != queryText) {
+        final capSnapshot = await FirebaseFirestore.instance
+            .collection("users")
+            .where('fullName', isGreaterThanOrEqualTo: capitalizedQuery)
+            .where('fullName', isLessThanOrEqualTo: '$capitalizedQuery\uf8ff')
+            .limit(pageSize)
+            .get();
+            
+        for (var doc in capSnapshot.docs) {
+          final user = UserModel.fromMap(doc.data(), docId: doc.id);
+          if (!list.any((u) => u.id == user.id)) {
+            list.add(user);
+          }
+        }
+      }
+
+      userList.assignAll(list);
+      lastDocument = null;
+      hasNextPage.value = false;
+    } catch (e) {
+      debugPrint("Error searching users: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteUser(UserModel user) async {
+    if (user.id == null || user.id!.isEmpty) return;
+    try {
+      deletingId.value = user.id!;
+      
+      // Delete user document from Firestore (this triggers auth delete if trigger exists)
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.id)
+          .delete();
+          
+      // Remove from local list
+      userList.removeWhere((element) => element.id == user.id);
+      
+      Get.snackbar(
+        "Success",
+        "User deleted successfully",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (err) {
+      debugPrint("Error deleting user: $err");
+      Get.snackbar(
+        "Error",
+        "Failed to delete user: $err",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      deletingId.value = "";
     }
   }
 }

@@ -26,6 +26,7 @@ class AnnouncementController extends GetxController {
   //global key
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
   var isLoading = false.obs;
+  var deletingId = "".obs;
 
   // Image picker and storage
   final ImagePicker _imagePicker = ImagePicker();
@@ -289,6 +290,7 @@ class AnnouncementController extends GetxController {
   Future<void> deleteannouncement(AnnouncementModel item) async {
     if (item.id == null || item.id!.isEmpty) return;
     try {
+      deletingId.value = item.id!;
       await FirebaseFirestore.instance
           .collection("announcements")
           .doc(item.id)
@@ -313,6 +315,8 @@ class AnnouncementController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      deletingId.value = "";
     }
   }
 
@@ -365,5 +369,53 @@ class AnnouncementController extends GetxController {
     }
   }
 
- 
+  Future<void> searchAnnouncements(String queryVal) async {
+    final queryText = queryVal.trim();
+    if (queryText.isEmpty) {
+      fetchfirstPage(forceRefresh: true);
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      final capitalizedQuery = queryText.isEmpty 
+          ? "" 
+          : queryText[0].toUpperCase() + queryText.substring(1);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection("announcements")
+          .where('title', isGreaterThanOrEqualTo: queryText)
+          .where('title', isLessThanOrEqualTo: '$queryText\uf8ff')
+          .limit(pageSize)
+          .get();
+
+      final list = snapshot.docs.map((doc) {
+        return AnnouncementModel.fromMap(doc.data(), id: doc.id);
+      }).toList();
+
+      if (capitalizedQuery != queryText) {
+        final capSnapshot = await FirebaseFirestore.instance
+            .collection("announcements")
+            .where('title', isGreaterThanOrEqualTo: capitalizedQuery)
+            .where('title', isLessThanOrEqualTo: '$capitalizedQuery\uf8ff')
+            .limit(pageSize)
+            .get();
+            
+        for (var doc in capSnapshot.docs) {
+          final ann = AnnouncementModel.fromMap(doc.data(), id: doc.id);
+          if (!list.any((a) => a.id == ann.id)) {
+            list.add(ann);
+          }
+        }
+      }
+
+      announcementList.assignAll(list);
+      lastDocument = null;
+      hasNextPage.value = false;
+    } catch (e) {
+      debugPrint("Error searching announcements: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }

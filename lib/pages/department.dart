@@ -24,6 +24,7 @@ class Department extends StatelessWidget {
 
     final updateStatusButton = CustomButton(
       callback: () {
+        // showDialog ke andar CustomAppDialog wrap kiya gaya hai
         showDialog(
           context: context,
           barrierColor: Colors.black.withValues(alpha: 0.3),
@@ -325,11 +326,14 @@ class DepartmentTableSource extends DataTableSource {
           ),
         ),
         DataCell(
-          TableActions(
-            onDelete: () {
-              departmentCtrl.deleteDepartmentInfo(info);
-              debugPrint("Delete tapped for: ${info.id}");
-            },
+          Obx(
+            () => TableActions(
+              isDeleting: departmentCtrl.deletingId.value == info.id,
+              onDelete: () {
+                departmentCtrl.deleteDepartmentInfo(info);
+                debugPrint("Delete tapped for: ${info.id}");
+              },
+            ),
           ),
         ),
       ],
@@ -439,8 +443,9 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
 // Edit and delete actions
 class TableActions extends StatelessWidget {
   final VoidCallback? onDelete;
+  final bool isDeleting;
 
-  const TableActions({super.key, this.onDelete});
+  const TableActions({super.key, this.onDelete, this.isDeleting = false});
 
   @override
   Widget build(BuildContext context) {
@@ -451,15 +456,29 @@ class TableActions extends StatelessWidget {
         Tooltip(
           message: 'Delete',
           child: InkWell(
-            onTap: onDelete,
+            onTap: isDeleting ? null : onDelete,
             borderRadius: BorderRadius.circular(6),
-            child: const Padding(
-              padding: EdgeInsets.all(4.0),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                size: 25,
-                color: Color(0xFFEF5350),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: isDeleting
+                  ? const SizedBox(
+                      width: 25,
+                      height: 25,
+                      child: Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFFEF5350),
+                          ),
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 25,
+                      color: Color(0xFFEF5350),
+                    ),
             ),
           ),
         ),

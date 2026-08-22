@@ -17,6 +17,7 @@ class DepartmentController extends GetxController {
   var isToggled = false.obs;
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
   var isLoading = false.obs;
+  var deletingId = "".obs;
   DocumentSnapshot<Map<String, dynamic>>? lastDocument;
   RxList<DepartmentModel> departmentList = <DepartmentModel>[].obs;
   int pageSize = 5;
@@ -210,6 +211,7 @@ class DepartmentController extends GetxController {
   Future<void> deleteDepartmentInfo(DepartmentModel item) async {
     if (item.id == null || item.id!.isEmpty) return;
     try {
+      deletingId.value = item.id!;
       await DepartmentService().deleteDepartmentinfo(item.id!);
 
       //deleting from list
@@ -232,6 +234,8 @@ class DepartmentController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      deletingId.value = "";
     }
   }
 }

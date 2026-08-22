@@ -38,6 +38,7 @@ class CampusController extends GetxController {
   var isToggled = false.obs;
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
   var isLoading = false.obs;
+  var deletingId = "".obs;
   CampusInformationModel campusInfoModel = CampusInformationModel();
   DocumentSnapshot<Map<String, dynamic>>? lastDocument;
   RxList<CampusInformationModel> campusInfoList =
@@ -362,6 +363,7 @@ class CampusController extends GetxController {
   Future<void> deleteCampusInfo(CampusInformationModel item) async {
     if (item.id == null || item.id!.isEmpty) return;
     try {
+      deletingId.value = item.id!;
       await CampusInfoService().deleteCampusinfo(item.id!);
       
       //deleting from list
@@ -384,6 +386,8 @@ class CampusController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      deletingId.value = "";
     }
   }
 }

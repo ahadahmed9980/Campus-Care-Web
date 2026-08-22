@@ -36,4 +36,8 @@ class RequestCategoriesService {
     }
     return await query.get();
   }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> fetchAllCategories() async {
+    return await _firestore.collection("requestCategories").get();
+  }
 }

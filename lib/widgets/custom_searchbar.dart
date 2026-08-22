@@ -6,15 +6,16 @@ import 'package:get/get_instance/src/extension_instance.dart';
 
 class CustomSearchbar extends StatelessWidget {
   final TextEditingController searchcontroller;
-  
   final String hinttext;
+  final ValueChanged<String>? onChanged;
 
- CustomSearchbar({
+  CustomSearchbar({
     super.key,
     required this.hinttext,
     required this.searchcontroller,
+    this.onChanged,
   });
- final dashboardcontroller = Get.find<DashboardController>();
+  final dashboardcontroller = Get.find<DashboardController>();
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -22,6 +23,7 @@ class CustomSearchbar extends StatelessWidget {
       width: double.infinity,
       child: TextField(
         controller: searchcontroller,
+        onChanged: onChanged,
         maxLines: 1,
         cursorColor: Colors.black,
         cursorHeight: 15,

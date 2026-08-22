@@ -20,4 +20,8 @@ class FetchRequestService {
     }
     return await query.get();
   }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> fetchAllRequests() async {
+    return await _firestore.collection("requests").get();
+  }
 }

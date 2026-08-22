@@ -1,11 +1,11 @@
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
 import 'package:customer_care_webapp/controller/request_controller.dart';
 import 'package:customer_care_webapp/models/request_model.dart';
-import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/badges/prority_badge.dart';
 import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
 import 'package:customer_care_webapp/widgets/custom_searchbar.dart';
+import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
@@ -20,24 +20,27 @@ class Requests extends StatelessWidget {
   final requestcontroller = Get.find<RequestController>();
 
   Widget _buildFilters(BuildContext context, BoxConstraints constraints) {
-    final dropdown1 = customDropDownbutton(
+    final dropdown1 = customFormDownbutton(
       context: context,
       selectedValue: requestcontroller.selectedStatus,
       items: requestcontroller.status,
     );
-    final dropdown2 = customDropDownbutton(
+    final dropdown2 = customFormDownbutton(
       context: context,
-      selectedValue: requestcontroller.selectedStatus,
-      items: requestcontroller.status,
+      selectedValue: requestcontroller.selectedCategory,
+      items: requestcontroller.categories,
     );
-    final dropdown3 = customDropDownbutton(
+    final dropdown3 = customFormDownbutton(
       context: context,
-      selectedValue: requestcontroller.selectedStatus,
-      items: requestcontroller.status,
+      selectedValue: requestcontroller.selectedPriority,
+      items: requestcontroller.priority,
     );
     final searchbar = CustomSearchbar(
       hinttext: "Search requests",
       searchcontroller: requestcontroller.searchrbar,
+      onChanged: (value) {
+        requestcontroller.searchRequests(value);
+      },
     );
 
     if (constraints.maxWidth < 600) {
@@ -143,69 +146,15 @@ class Requests extends StatelessWidget {
   }
 }
 
-//custom reusable dropdown menu
-Widget customDropDownbutton({
-  required BuildContext context,
-  required RxString selectedValue,
-  required RxList<String> items,
-}) {
-  final textTheme = Theme.of(context).textTheme;
-  return Obx(
-    () => Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<String>(
-        borderRadius: BorderRadius.circular(16),
-        value: selectedValue.value,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Theme.of(context).cardColor,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.grey, width: 1.5),
-          ),
-        ),
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.grey),
-        style: textTheme.labelMedium,
-        items: items.map((status) {
-          return DropdownMenuItem<String>(value: status, child: Text(status));
-        }).toList(),
 
-        onChanged: (value) {
-          if (value != null) {
-            selectedValue.value = value;
-          }
-        },
-      ),
-    ),
-  );
-}
 
 class RequestTableSource extends DataTableSource {
   final requestcontroller = Get.find<RequestController>();
   final List<RequestModel> data;
   final BuildContext context;
   RequestTableSource({required this.data, required this.context});
-  void _goToDetails() {
-    context.go('/request-details');
+  void _goToDetails(String requestId) {
+    context.go('/request/$requestId');
   }
 
   @override
@@ -231,7 +180,10 @@ class RequestTableSource extends DataTableSource {
     final request = data[index];
     return DataRow.byIndex(
       onSelectChanged: (selected) => {
-        if (selected != null) {debugPrint("clicked"), _goToDetails()},
+        if (selected != null) {
+          debugPrint("clicked"),
+          _goToDetails(request.id),
+        },
       },
       index: index,
       cells: [

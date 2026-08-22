@@ -8,22 +8,11 @@ class RequestController extends GetxController {
   TextEditingController searchrbar = TextEditingController();
   FetchRequestService fetchRequestService = FetchRequestService();
   final RxList<RequestModel> requestList = <RequestModel>[].obs;
+
   var isLoading = false.obs;
   final int pageSize = 5;
   DocumentSnapshot<Map<String, dynamic>>? lastDocument;
   RxBool hasNextPage = true.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchFirstPage();
-  }
-
-  @override
-  void dispose() {
-    searchrbar.dispose();
-    super.dispose();
-  }
 
   RxList<String> status = [
     "All Status",
@@ -33,6 +22,45 @@ class RequestController extends GetxController {
     'Resolved',
   ].obs;
   RxString selectedStatus = "All Status".obs;
+
+  RxList<String> priority = ["All Priority", "low", "medium", 'high'].obs;
+  RxString selectedPriority = "All Priority".obs;
+
+  RxList<String> categories = ["All Categories"].obs;
+  RxString selectedCategory = "All Categories".obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchFirstPage();
+    fetchCategories();
+
+    // Listen to filter changes and automatically refresh requests
+    selectedStatus.listen((_) => fetchFirstPage(forceRefresh: true));
+    selectedPriority.listen((_) => fetchFirstPage(forceRefresh: true));
+    selectedCategory.listen((_) => fetchFirstPage(forceRefresh: true));
+  }
+
+  @override
+  void dispose() {
+    searchrbar.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection("requestCategories")
+          .get();
+      final list = snapshot.docs
+          .map((doc) => doc.data()['name'] as String? ?? '')
+          .where((name) => name.isNotEmpty)
+          .toList();
+      categories.assignAll(["All Categories", ...list]);
+    } catch (e) {
+      debugPrint("Error fetching categories: $e");
+    }
+  }
 
   // fetching pages
   Future<void> fetchFirstPage({bool forceRefresh = false}) async {
@@ -45,12 +73,44 @@ class RequestController extends GetxController {
         lastDocument = null;
         hasNextPage.value = true;
       }
-      final snapshot = await fetchRequestService.fetchingRequest(
-        limit: pageSize,
+
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(
+        "requests",
       );
+
+      if (selectedStatus.value != "All Status") {
+        query = query.where("status", isEqualTo: selectedStatus.value);
+      }
+      if (selectedPriority.value != "All Priority") {
+        final p = selectedPriority.value;
+        final capitalizedPriority = p[0].toUpperCase() + p.substring(1);
+        query = query.where("priority", isEqualTo: capitalizedPriority);
+      }
+      if (selectedCategory.value != "All Categories") {
+        // Find category ID by name
+        final catSnapshot = await FirebaseFirestore.instance
+            .collection("requestCategories")
+            .where("name", isEqualTo: selectedCategory.value)
+            .limit(1)
+            .get();
+        if (catSnapshot.docs.isNotEmpty) {
+          query = query.where(
+            "categoryId",
+            isEqualTo: catSnapshot.docs.first.id,
+          );
+        } else {
+          requestList.clear();
+          lastDocument = null;
+          hasNextPage.value = false;
+          return;
+        }
+      }
+
+      final snapshot = await query.limit(pageSize).get();
       requestList.value = snapshot.docs.map((doc) {
         return RequestModel.fromMap(doc.data(), doc.id);
       }).toList();
+
       if (snapshot.docs.isNotEmpty) {
         lastDocument = snapshot.docs.last;
       }
@@ -69,20 +129,98 @@ class RequestController extends GetxController {
     }
     try {
       isLoading.value = true;
-      final snapshot = await fetchRequestService.fetchingRequest(
-        limit: pageSize,
-        lastDocumnt: lastDocument,
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(
+        "requests",
       );
+
+      if (selectedStatus.value != "All Status") {
+        query = query.where("status", isEqualTo: selectedStatus.value);
+      }
+      if (selectedPriority.value != "All Priority") {
+        final p = selectedPriority.value;
+        final capitalizedPriority = p[0].toUpperCase() + p.substring(1);
+        query = query.where("priority", isEqualTo: capitalizedPriority);
+      }
+      if (selectedCategory.value != "All Categories") {
+        final catSnapshot = await FirebaseFirestore.instance
+            .collection("requestCategories")
+            .where("name", isEqualTo: selectedCategory.value)
+            .limit(1)
+            .get();
+        if (catSnapshot.docs.isNotEmpty) {
+          query = query.where(
+            "categoryId",
+            isEqualTo: catSnapshot.docs.first.id,
+          );
+        } else {
+          return;
+        }
+      }
+
+      query = query.startAfterDocument(lastDocument!).limit(pageSize);
+      final snapshot = await query.get();
+
       final newRequests = snapshot.docs.map((doc) {
         return RequestModel.fromMap(doc.data(), doc.id);
       }).toList();
       requestList.addAll(newRequests);
+
       if (snapshot.docs.isNotEmpty) {
         lastDocument = snapshot.docs.last;
       }
       hasNextPage.value = snapshot.docs.length == pageSize;
     } catch (err) {
       debugPrint("Error fetching next page of requests: $err");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> searchRequests(String queryVal) async {
+    final queryText = queryVal.trim();
+    if (queryText.isEmpty) {
+      fetchFirstPage(forceRefresh: true);
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      final capitalizedQuery = queryText.isEmpty
+          ? ""
+          : queryText[0].toUpperCase() + queryText.substring(1);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection("requests")
+          .where('title', isGreaterThanOrEqualTo: queryText)
+          .where('title', isLessThanOrEqualTo: '$queryText\uf8ff')
+          .limit(pageSize)
+          .get();
+
+      final list = snapshot.docs.map((doc) {
+        return RequestModel.fromMap(doc.data(), doc.id);
+      }).toList();
+
+      if (capitalizedQuery != queryText) {
+        final capSnapshot = await FirebaseFirestore.instance
+            .collection("requests")
+            .where('title', isGreaterThanOrEqualTo: capitalizedQuery)
+            .where('title', isLessThanOrEqualTo: '$capitalizedQuery\uf8ff')
+            .limit(pageSize)
+            .get();
+
+        for (var doc in capSnapshot.docs) {
+          final req = RequestModel.fromMap(doc.data(), doc.id);
+          if (!list.any((r) => r.id == req.id)) {
+            list.add(req);
+          }
+        }
+      }
+
+      requestList.assignAll(list);
+      lastDocument = null;
+      hasNextPage.value = false;
+    } catch (e) {
+      debugPrint("Error searching requests: $e");
     } finally {
       isLoading.value = false;
     }

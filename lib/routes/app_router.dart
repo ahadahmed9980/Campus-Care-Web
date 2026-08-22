@@ -39,11 +39,14 @@ final appRouter = GoRouter(
           },
         ),
         GoRoute(
-          path: '/request-details',
+          path: '/request/:requestId',
 
           builder: (context, state) {
+            final requestId = state.pathParameters['requestId']!;
             RequestDetailBinding().dependencies();
-            return RequestDetail();
+            return RequestDetail(
+                requestId: requestId,
+            );
           },
         ),
 
@@ -79,8 +82,8 @@ final appRouter = GoRouter(
           path: '/departments',
 
           builder: (context, state) {
-             CampusBinding().dependencies();
-             
+            CampusBinding().dependencies();
+
             DepartmentBinding().dependencies();
             return Department();
           },

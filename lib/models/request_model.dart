@@ -74,4 +74,23 @@ class RequestModel {
       updatedAt: _parseTimestamp(map['updatedAt']),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'title': title,
+      'description': description,
+      'categoryId': categoryId,
+      'location': location,
+      'priority': priority,
+      'imageUrl': imageUrl,
+      'status': status,
+      'assignedDepartmentId': assignedDepartmentId,
+      'resolutionInfo': resolutionInfo,
+      'resolvedBy': resolvedBy,
+      'resolvedAt': resolvedAt,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+    };
+  }
 }

@@ -417,11 +417,14 @@ class CampusInfoTableSource extends DataTableSource {
           ),
         ),
         DataCell(
-          TableActions(
-            onDelete: () {
-              campusinfoCtrl.deleteCampusInfo(info);
-              debugPrint("Delete tapped for: ${info.id}");
-            },
+          Obx(
+            () => TableActions(
+              isDeleting: campusinfoCtrl.deletingId.value == info.id,
+              onDelete: () {
+                campusinfoCtrl.deleteCampusInfo(info);
+                debugPrint("Delete tapped for: ${info.id}");
+              },
+            ),
           ),
         ),
       ],
@@ -539,8 +542,9 @@ Widget _buildUI(BuildContext context, {required bool isMobile}) {
 //edit and delete
 class TableActions extends StatelessWidget {
   final VoidCallback? onDelete;
+  final bool isDeleting;
 
-  const TableActions({super.key, this.onDelete});
+  const TableActions({super.key, this.onDelete, this.isDeleting = false});
 
   @override
   Widget build(BuildContext context) {
@@ -552,15 +556,29 @@ class TableActions extends StatelessWidget {
         Tooltip(
           message: 'Delete',
           child: InkWell(
-            onTap: onDelete,
+            onTap: isDeleting ? null : onDelete,
             borderRadius: BorderRadius.circular(6),
-            child: const Padding(
-              padding: EdgeInsets.all(4.0),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                size: 25,
-                color: Color(0xFFEF5350),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: isDeleting
+                  ? const SizedBox(
+                      width: 25,
+                      height: 25,
+                      child: Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFFEF5350),
+                          ),
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 25,
+                      color: Color(0xFFEF5350),
+                    ),
             ),
           ),
         ),

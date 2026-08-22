@@ -14,6 +14,9 @@ Widget customFormDownbutton({
   String? labelText,
   Widget? suffixIcon,
   String? Function(String?)? validator,
+  void Function(String?)? onChanged,
+  bool enabled = true,
+  bool isLoading = false,
 }) {
   final textTheme = Theme.of(context).textTheme;
  final dashboardcontroller = Get.find<DashboardController>();
@@ -89,10 +92,19 @@ Widget customFormDownbutton({
                 ),
               ),
             ),
-            icon: const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: AppColors.grey,
-            ),
+            icon: isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.grey),
+                    ),
+                  )
+                : const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.grey,
+                  ),
             style: textTheme.labelMedium,
             items: items.map((status) {
               return DropdownMenuItem<String>(
@@ -100,11 +112,16 @@ Widget customFormDownbutton({
                 child: Text(status),
               );
             }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                selectedValue.value = value;
-              }
-            },
+            onChanged: enabled && !isLoading
+                ? (value) {
+                    if (value != null) {
+                      selectedValue.value = value;
+                      if (onChanged != null) {
+                        onChanged(value);
+                      }
+                    }
+                  }
+                : null,
             validator: validator,
           ),
         ),
