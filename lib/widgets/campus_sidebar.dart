@@ -176,8 +176,11 @@ class CampusSidebar extends StatelessWidget {
                 children: [
                   const CircleAvatar(
                     radius: 18,
-                    backgroundImage: NetworkImage(
-                      'https://i.pravatar.cc/150?img=12',
+                    backgroundColor: Color(0xFF1A2A3A),
+                    child: Icon(
+                      Icons.person,
+                      size: 22,
+                      color: Colors.white70,
                     ),
                   ),
                   Positioned(

@@ -3,6 +3,7 @@ import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/charts/flchart.dart';
 import 'package:customer_care_webapp/widgets/charts/piechart.dart';
+import 'package:customer_care_webapp/widgets/notification_bell.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
@@ -96,16 +97,21 @@ class _DashboardState extends State<Dashboard> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.notifications_active_outlined),
+                  const NotificationBellButton(),
                   const SizedBox(width: 16),
 
                   // User Avatar & Online Status Dot
                   Stack(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 18,
-                        backgroundImage: NetworkImage(
-                          'https://i.pravatar.cc/150?img=12',
+                        backgroundColor: isDark
+                            ? const Color(0xFF2A2A2A)
+                            : const Color(0xFFE8EEF2),
+                        child: Icon(
+                          Icons.person,
+                          size: 22,
+                          color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
                       Positioned(

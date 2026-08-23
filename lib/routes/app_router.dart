@@ -2,23 +2,67 @@ import 'package:customer_care_webapp/bindings/all_users_binding.dart';
 import 'package:customer_care_webapp/bindings/announcement_binding.dart';
 import 'package:customer_care_webapp/bindings/campus_binding.dart';
 import 'package:customer_care_webapp/bindings/department_binding.dart';
+import 'package:customer_care_webapp/bindings/forgot_password_binding.dart';
+import 'package:customer_care_webapp/bindings/login_binding.dart';
 import 'package:customer_care_webapp/bindings/requestCategory_binding.dart';
 import 'package:customer_care_webapp/bindings/request_binding.dart';
 import 'package:customer_care_webapp/bindings/request_detail_binding.dart';
 import 'package:customer_care_webapp/pages/all_users.dart';
 import 'package:customer_care_webapp/pages/announcements.dart';
+import 'package:customer_care_webapp/pages/auth_layout.dart';
 import 'package:customer_care_webapp/pages/campus_info.dart';
 import 'package:customer_care_webapp/pages/department.dart';
 import 'package:customer_care_webapp/pages/requestCategories.dart';
 import 'package:customer_care_webapp/pages/dashboard.dart';
 import 'package:customer_care_webapp/pages/main_page.dart';
+import 'package:customer_care_webapp/pages/notifications_page.dart';
 import 'package:customer_care_webapp/pages/request_detail.dart';
 import 'package:customer_care_webapp/pages/requests.dart';
+import 'package:customer_care_webapp/bindings/send_notification_binding.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/dashboard',
+  initialLocation: '/login',
+  redirect: (context, state) {
+    final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    final location = state.matchedLocation;
+    final isAuthRoute =
+        location == '/login' || location == '/forgot-password';
+
+    if (!isLoggedIn && !isAuthRoute) {
+      return '/login';
+    }
+    if (isLoggedIn && isAuthRoute) {
+      return '/dashboard';
+    }
+    return null;
+  },
   routes: [
+    ShellRoute(
+      builder: (context, state, child) {
+        return AuthLayout(child: child);
+      },
+      routes: [
+        GoRoute(
+          path: '/login',
+          builder: (context, state) {
+            LoginBinding().dependencies();
+            return const SizedBox.shrink();
+          },
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (context, state) {
+            ForgotPasswordBinding(
+              initialEmail: state.uri.queryParameters['email'],
+            ).dependencies();
+            return const SizedBox.shrink();
+          },
+        ),
+      ],
+    ),
     ShellRoute(
       builder: (context, state, child) {
         return MainPage(child: child);
@@ -88,12 +132,13 @@ final appRouter = GoRouter(
             return Department();
           },
         ),
-        //     GoRoute(
-        //       path: '/notifications',
-        //       builder: (context, state) {
-        //         return NotificationsPage();
-        //       },
-        //     ),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) {
+            SendNotificationBinding().dependencies();
+            return const NotificationsPage();
+          },
+        ),
         //     GoRoute(
         //       path: '/settings',
         //       builder: (context, state) {

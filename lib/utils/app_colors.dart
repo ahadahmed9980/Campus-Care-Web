@@ -15,4 +15,10 @@ class AppColors {
   static const Color darkBackground = Color(0xFF000000);
   static const Color darkText = Colors.white;
   static const Color darkCard = Color(0xFF121212);
+
+  /// Brighter primary for dark surfaces so accents stay readable.
+  static Color adaptivePrimary(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? const Color(0xFF54CFC1) : primary;
+  }
 }

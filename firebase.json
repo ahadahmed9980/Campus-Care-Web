@@ -1,1 +1,23 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"campuscare-e812f","appId":"1:543995537068:android:94bf8c8722a0d3ae04a109","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"campuscare-e812f","configurations":{"android":"1:543995537068:android:94bf8c8722a0d3ae04a109","ios":"1:543995537068:ios:4df67a1846c557ee04a109","web":"1:543995537068:web:6d76896697452f0704a109"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "campuscare-e812f",
+          "appId": "1:543995537068:android:94bf8c8722a0d3ae04a109",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "campuscare-e812f",
+          "configurations": {
+            "android": "1:543995537068:android:94bf8c8722a0d3ae04a109",
+            "ios": "1:543995537068:ios:4df67a1846c557ee04a109",
+            "web": "1:543995537068:web:6d76896697452f0704a109"
+          }
+        }
+      }
+    }
+  }
+}
