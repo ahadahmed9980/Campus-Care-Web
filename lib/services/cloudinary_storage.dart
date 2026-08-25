@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 
 class CloudinaryService {
   // 1. Apni Cloudinary details yahan replace karein
-  static const String _cloudName = "dvwevphr5";
-  static const String _uploadPreset = "campuscare_images"; 
+  static const String _cloudName = "dutsuqswv";
+  static const String _uploadPreset = "heaz0p48"; 
 
   /// Image upload karega aur uploaded image ka secure URL return karega
   static Future<String?> uploadImage({
