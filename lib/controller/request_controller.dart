@@ -114,6 +114,7 @@ class RequestController extends GetxController {
       }
     }
 
+    query = query.orderBy("createdAt", descending: true);
     return query;
   }
 
@@ -203,6 +204,7 @@ class RequestController extends GetxController {
         }
       }
 
+      query = query.orderBy("createdAt", descending: true);
       query = query.startAfterDocument(lastDocument!).limit(pageSize);
       final snapshot = await query.get();
 

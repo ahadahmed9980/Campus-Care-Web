@@ -69,6 +69,7 @@ class RequestDetail extends StatelessWidget {
           .slideX(begin: 0.05, end: 0, duration: 400.ms);
 
       return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(flex: 2, child: detailcontainer),
           const SizedBox(width: 10),
@@ -121,191 +122,175 @@ class RequestDetail extends StatelessWidget {
           enabled: showSkeleton,
           child: LayoutBuilder(
             builder: (context, constraints) {
-            final isMobile = constraints.maxWidth < 600;
-            final isTablet = constraints.maxWidth < 1024;
+              final isMobile = constraints.maxWidth < 600;
+              final isTablet = constraints.maxWidth < 1024;
 
-            Widget buildHeaderControls(bool isMobileScreen) {
-              final remarksField = DynamicTextFormField(
-                controller: requestDetailcontroller.resolutionInfo,
-                hintText: "Enter remarks",
-                labelText: "Remarks",
-                suffixicon: Icons.send_outlined,
-                isLoading: requestDetailcontroller.isRemarksLoading.value,
-                callback: () {
-                  requestDetailcontroller.updateResolutionInfo();
-                },
+         final statusUpdateButton = Padding(
+  padding: const EdgeInsets.only(top: 24.0), // Yahan apni marzi ka margin set karein
+  child: CustomButton(
+    title: "Update Status",
+    isLoading: requestDetailcontroller.isStatusLoading.value,
+    callback: isClosed
+        ? () {}
+        : () {
+            requestDetailcontroller.applyPendingStatusUpdate();
+          },
+  ),
+);
+
+              Widget buildHeaderControls(bool isMobileScreen) {
+                final remarksField = DynamicTextFormField(
+                  controller: requestDetailcontroller.resolutionInfo,
+                  hintText: "Enter remarks",
+                  labelText: "Remarks",
+                  suffixicon: Icons.send_outlined,
+                  isLoading: requestDetailcontroller.isRemarksLoading.value,
+                  callback: () {
+                    requestDetailcontroller.updateResolutionInfo();
+                  },
+                );
+
+                final deptDropdown = customFormDownbutton(
+                  context: context,
+                  selectedValue: requestDetailcontroller.selectedDepartmentName,
+                  items: requestDetailcontroller.departmentNames,
+                  enabled: !isClosed,
+                  hintText: "Assign Department",
+                  labelText: "Department",
+                  isLoading: requestDetailcontroller.isDepartmentLoading.value,
+                  onChanged: (value) {
+                    if (value != null) {
+                      requestDetailcontroller.updateAssignedDepartment(value);
+                    }
+                  },
+                );
+
+                final statusDropdown = customFormDownbutton(
+                  context: context,
+                  selectedValue: requestDetailcontroller.selectedStatus,
+                  items: requestDetailcontroller.status,
+                  enabled: !isClosed,
+                  hintText: "Select status",
+                  labelText: "Status",
+                  isLoading: requestDetailcontroller.isStatusLoading.value,
+                );
+
+                if (isMobileScreen) {
+                  return Column(
+                    children: [
+                      remarksField,
+                      const SizedBox(height: 10),
+                      deptDropdown,
+                      const SizedBox(height: 10),
+                      statusDropdown,
+                      if (!isClosed) ...[
+                        const SizedBox(height: 15),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: statusUpdateButton,
+                        ),
+                      ],
+                    ],
+                  );
+                } else {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: remarksField),
+                      const SizedBox(width: 10),
+                      Expanded(child: deptDropdown),
+                      const SizedBox(width: 10),
+                      Expanded(child: statusDropdown),
+                    ],
+                  );
+                }
+              }
+
+              final headerAndoverview = Container(
+                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!Responsive.isMobileScreen(context)) ...{
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Request Details", style: textTheme.headlineLarge),
+                          if (!isClosed)
+                            statusUpdateButton,
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    },
+                    Text(
+                      "Requests / ${requestModel.id}",
+                      style: textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 15),
+                    buildHeaderControls(isMobile),
+                  ],
+                ),
               );
 
-              final deptDropdown = customFormDownbutton(
-                context: context,
-                selectedValue: requestDetailcontroller.selectedDepartmentName,
-                items: requestDetailcontroller.departmentNames,
-                enabled: !isClosed,
-                hintText: "Assign Department",
-                labelText: "Department",
-                isLoading: requestDetailcontroller.isDepartmentLoading.value,
-                onChanged: (value) {
-                  if (value != null) {
-                    requestDetailcontroller.updateAssignedDepartment(value);
-                  }
-                },
-              );
-
-              final statusDropdown = customFormDownbutton(
-                context: context,
-                selectedValue: requestDetailcontroller.selectedStatus,
-                items: requestDetailcontroller.status,
-                enabled: !isClosed,
-                hintText: "Select status",
-                labelText: "Status",
-                isLoading: requestDetailcontroller.isStatusLoading.value,
-              );
-
-              final statusUpdateButton = CustomButton(
-                title: "Update Status",
-                isLoading: requestDetailcontroller.isStatusLoading.value,
-                callback: isClosed
-                    ? () {}
-                    : () {
-                        requestDetailcontroller.applyPendingStatusUpdate();
-                      },
-              );
-
-              if (isMobileScreen) {
+              if (isMobile) {
                 return Column(
                   children: [
-                    remarksField,
-                    const SizedBox(height: 10),
-                    deptDropdown,
-                    const SizedBox(height: 10),
-                    statusDropdown,
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: statusUpdateButton,
+                    headerAndoverview,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Column(
+                          children: [
+                            _buildContainers(context, constraints, requestModel),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              } else if (isTablet) {
+                return Column(
+                  children: [
+                    headerAndoverview,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Column(
+                          children: [
+                            _buildContainers(context, constraints, requestModel),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 );
               } else {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: remarksField),
-                    const SizedBox(width: 10),
-                    Expanded(child: deptDropdown),
-                    const SizedBox(width: 10),
-                    Expanded(child: statusDropdown),
-                    const SizedBox(width: 10),
-                    statusUpdateButton,
+                    headerAndoverview,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: _buildContainers(
+                            context,
+                            constraints,
+                            requestModel,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 );
               }
-            }
-
-            final headerAndoverview = Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!Responsive.isMobileScreen(context)) ...{
-                    Text("Request Details", style: textTheme.headlineLarge),
-                    const SizedBox(height: 10),
-                  },
-                  if (constraints.maxWidth >= 1024)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Requests / ${requestModel.id}",
-                          style: textTheme.labelLarge,
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 700),
-                              child: buildHeaderControls(false),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Requests / ${requestModel.id}",
-                          style: textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 10),
-                        buildHeaderControls(isMobile),
-                      ],
-                    ),
-                ],
-              ),
-            );
-
-            if (isMobile) {
-              return Column(
-                children: [
-                  headerAndoverview,
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Column(
-                        children: [
-                          _buildContainers(context, constraints, requestModel),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            } else if (isTablet) {
-              return Column(
-                children: [
-                  headerAndoverview,
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Column(
-                        children: [
-                          _buildContainers(context, constraints, requestModel),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            } else {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  headerAndoverview,
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: _buildContainers(
-                          context,
-                          constraints,
-                          requestModel,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }
-          },
-        ),
-      );
-    }),
+            },
+          ),
+        );
+      }),
     );
   }
 }

@@ -4,7 +4,6 @@ import 'package:customer_care_webapp/models/request_model.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/badges/prority_badge.dart';
 import 'package:customer_care_webapp/widgets/custom_dataTable.dart';
-import 'package:customer_care_webapp/widgets/custom_searchbar.dart';
 import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
@@ -35,13 +34,6 @@ class Requests extends StatelessWidget {
       selectedValue: requestcontroller.selectedPriority,
       items: requestcontroller.priority,
     );
-    final searchbar = CustomSearchbar(
-      hinttext: "Search requests",
-      searchcontroller: requestcontroller.searchrbar,
-      onChanged: (value) {
-        requestcontroller.searchRequests(value);
-      },
-    );
 
     if (constraints.maxWidth < 600) {
       return Column(
@@ -51,8 +43,6 @@ class Requests extends StatelessWidget {
           dropdown2,
           const SizedBox(height: 10),
           dropdown3,
-          const SizedBox(height: 10),
-          searchbar,
         ],
       );
     } else if (constraints.maxWidth < 1024) {
@@ -70,7 +60,7 @@ class Requests extends StatelessWidget {
             children: [
               Expanded(child: dropdown3),
               const SizedBox(width: 10),
-              Expanded(child: searchbar),
+              const Spacer(),
             ],
           ),
         ],
@@ -84,7 +74,7 @@ class Requests extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: dropdown3),
           const SizedBox(width: 10),
-          Expanded(child: searchbar),
+          const Spacer(),
         ],
       );
     }
