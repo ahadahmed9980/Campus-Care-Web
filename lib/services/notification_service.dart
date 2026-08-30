@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const String kAdminNotificationsCollection = 'admin_notifications';
+const String kLegacyNotificationsCollection = 'notifications';
+
 /// Paste the Web Push certificate key from:
 /// Firebase Console → Project settings → Cloud Messaging → Web Push certificates
 /// Or pass at build time: `--dart-define=FCM_VAPID_KEY=BKag...`
@@ -28,6 +31,7 @@ class AppNotification {
     required this.isRead,
     this.data = const {},
     this.messageId,
+    this.firestoreCollection = kAdminNotificationsCollection,
   });
 
   final String id;
@@ -37,6 +41,7 @@ class AppNotification {
   final bool isRead;
   final Map<String, dynamic> data;
   final String? messageId;
+  final String firestoreCollection;
 
   AppNotification copyWith({bool? isRead}) {
     return AppNotification(
@@ -47,6 +52,7 @@ class AppNotification {
       isRead: isRead ?? this.isRead,
       data: data,
       messageId: messageId,
+      firestoreCollection: firestoreCollection,
     );
   }
 
@@ -58,6 +64,7 @@ class AppNotification {
         'isRead': isRead,
         'data': data,
         'messageId': messageId,
+        'firestoreCollection': firestoreCollection,
       };
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
@@ -70,30 +77,46 @@ class AppNotification {
       isRead: json['isRead'] as bool? ?? false,
       data: Map<String, dynamic>.from(json['data'] as Map? ?? {}),
       messageId: json['messageId'] as String?,
+      firestoreCollection: json['firestoreCollection'] as String? ??
+          kAdminNotificationsCollection,
     );
   }
 
   factory AppNotification.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+    DocumentSnapshot<Map<String, dynamic>> doc, {
+    String collection = kAdminNotificationsCollection,
+  }) {
     final data = doc.data() ?? {};
     final createdAt = data['createdAt'];
+    final notificationData =
+        Map<String, dynamic>.from(data['data'] as Map? ?? {});
+    if (data['requestId'] != null) {
+      notificationData['requestId'] = data['requestId'];
+    }
+    if (data['type'] != null) {
+      notificationData['type'] = data['type'];
+    }
+
     return AppNotification(
       id: doc.id,
       title: data['title'] as String? ?? 'Notification',
-      body: data['body'] as String? ?? '',
+      body: data['body'] as String? ?? data['message'] as String? ?? '',
       createdAt: createdAt is Timestamp
           ? createdAt.toDate()
           : DateTime.tryParse(createdAt?.toString() ?? '') ?? DateTime.now(),
       isRead: data['isRead'] as bool? ?? false,
-      data: Map<String, dynamic>.from(data['data'] as Map? ?? {}),
+      data: notificationData,
       messageId: data['messageId'] as String?,
+      firestoreCollection: collection,
     );
   }
 }
 
 /// FCM + Firestore notification history for the admin dashboard.
 class NotificationService extends GetxService {
+  static const adminNotificationsCollection = kAdminNotificationsCollection;
+  static const legacyNotificationsCollection = kLegacyNotificationsCollection;
+
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -105,12 +128,21 @@ class NotificationService extends GetxService {
   final RxBool isInitialized = false.obs;
 
   StreamSubscription<User?>? _authSub;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _historySub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _adminNotificationsSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _legacyNotificationsSub;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
 
   static const _localCacheKey = 'notification_history_cache';
+  static const _notificationLimit = 50;
+
+  List<AppNotification> _adminNotificationItems = [];
+  List<AppNotification> _legacyNotificationItems = [];
+  var _adminNotificationsReady = false;
+  var _legacyNotificationsReady = false;
+  var _adminNotificationsPrimed = false;
+  var _legacyNotificationsPrimed = false;
 
   Future<NotificationService> init() async {
     if (isInitialized.value) return this;
@@ -120,24 +152,26 @@ class NotificationService extends GetxService {
     await _bindMessagingListeners();
 
     _authSub = _auth.authStateChanges().listen((user) async {
-      await _historySub?.cancel();
-      _historySub = null;
+      await _cancelNotificationStreams();
 
       if (user == null) {
         notifications.clear();
         unreadCount.value = 0;
         fcmToken.value = null;
+        _resetNotificationBuffers();
         return;
       }
 
       await retrieveAndPersistToken();
-      _listenHistory(user.uid);
+      _listenAdminNotifications();
+      _listenLegacyNotifications(user.uid);
     });
 
     final current = _auth.currentUser;
     if (current != null) {
       await retrieveAndPersistToken();
-      _listenHistory(current.uid);
+      _listenAdminNotifications();
+      _listenLegacyNotifications(current.uid);
     }
 
     isInitialized.value = true;
@@ -221,23 +255,91 @@ class NotificationService extends GetxService {
     });
   }
 
-  void _listenHistory(String adminId) {
-    var isFirstSnapshot = true;
+  Future<void> _cancelNotificationStreams() async {
+    await _adminNotificationsSub?.cancel();
+    await _legacyNotificationsSub?.cancel();
+    _adminNotificationsSub = null;
+    _legacyNotificationsSub = null;
+    _resetNotificationBuffers();
+  }
 
-    _historySub = _firestore
-        .collection('notifications')
-        .where('adminId', isEqualTo: adminId)
+  void _resetNotificationBuffers() {
+    _adminNotificationItems = [];
+    _legacyNotificationItems = [];
+    _adminNotificationsReady = false;
+    _legacyNotificationsReady = false;
+    _adminNotificationsPrimed = false;
+    _legacyNotificationsPrimed = false;
+  }
+
+  void _listenAdminNotifications() {
+    _adminNotificationsSub = _firestore
+        .collection(adminNotificationsCollection)
         .orderBy('createdAt', descending: true)
-        .limit(50)
+        .limit(_notificationLimit)
         .snapshots()
         .listen(
       (snapshot) {
-        final items = snapshot.docs
+        _adminNotificationItems = snapshot.docs
             .where((doc) => doc.data()['isBroadcastLog'] != true)
-            .map(AppNotification.fromFirestore)
+            .map(
+              (doc) => AppNotification.fromFirestore(
+                doc,
+                collection: adminNotificationsCollection,
+              ),
+            )
             .toList(growable: false);
 
-        if (!isFirstSnapshot) {
+        if (_adminNotificationsPrimed) {
+          for (final change in snapshot.docChanges) {
+            if (change.type != DocumentChangeType.added) continue;
+
+            final data = change.doc.data();
+            if (data == null || data['isBroadcastLog'] == true) continue;
+
+            final notification = AppNotification.fromFirestore(
+              change.doc,
+              collection: adminNotificationsCollection,
+            );
+            if (!notification.isRead) {
+              _showInAppAlert(notification);
+            }
+          }
+        } else {
+          _adminNotificationsPrimed = true;
+        }
+
+        _adminNotificationsReady = true;
+        _publishMergedNotifications();
+      },
+      onError: (Object e) {
+        debugPrint(
+          'NotificationService: admin_notifications stream error: $e',
+        );
+      },
+    );
+  }
+
+  void _listenLegacyNotifications(String adminId) {
+    _legacyNotificationsSub = _firestore
+        .collection(legacyNotificationsCollection)
+        .where('adminId', isEqualTo: adminId)
+        .orderBy('createdAt', descending: true)
+        .limit(_notificationLimit)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        _legacyNotificationItems = snapshot.docs
+            .where((doc) => doc.data()['isBroadcastLog'] != true)
+            .map(
+              (doc) => AppNotification.fromFirestore(
+                doc,
+                collection: legacyNotificationsCollection,
+              ),
+            )
+            .toList(growable: false);
+
+        if (_legacyNotificationsPrimed) {
           for (final change in snapshot.docChanges) {
             if (change.type != DocumentChangeType.added) continue;
 
@@ -245,23 +347,36 @@ class NotificationService extends GetxService {
             if (data == null || data['isBroadcastLog'] == true) continue;
             if (data['sentBy'] == adminId) continue;
 
-            final notification = AppNotification.fromFirestore(change.doc);
+            final notification = AppNotification.fromFirestore(
+              change.doc,
+              collection: legacyNotificationsCollection,
+            );
             if (!notification.isRead) {
               _showInAppAlert(notification);
             }
           }
         } else {
-          isFirstSnapshot = false;
+          _legacyNotificationsPrimed = true;
         }
 
-        notifications.assignAll(items);
-        unreadCount.value = items.where((n) => !n.isRead).length;
-        unawaited(_persistLocalCache());
+        _legacyNotificationsReady = true;
+        _publishMergedNotifications();
       },
       onError: (Object e) {
-        debugPrint('NotificationService: history stream error: $e');
+        debugPrint('NotificationService: notifications stream error: $e');
       },
     );
+  }
+
+  void _publishMergedNotifications() {
+    if (!_adminNotificationsReady || !_legacyNotificationsReady) return;
+
+    final merged = [..._adminNotificationItems, ..._legacyNotificationItems]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    notifications.assignAll(merged.take(_notificationLimit).toList());
+    unreadCount.value = notifications.where((n) => !n.isRead).length;
+    unawaited(_persistLocalCache());
   }
 
   Future<void> _handleForeground(RemoteMessage message) async {
@@ -294,17 +409,20 @@ class NotificationService extends GetxService {
 
     if (messageId != null && messageId.isNotEmpty) {
       final existing = await _firestore
-          .collection('notifications')
+          .collection(legacyNotificationsCollection)
           .where('adminId', isEqualTo: uid)
           .where('messageId', isEqualTo: messageId)
           .limit(1)
           .get();
       if (existing.docs.isNotEmpty) {
-        return AppNotification.fromFirestore(existing.docs.first);
+        return AppNotification.fromFirestore(
+          existing.docs.first,
+          collection: legacyNotificationsCollection,
+        );
       }
     }
 
-    final doc = _firestore.collection('notifications').doc();
+    final doc = _firestore.collection(legacyNotificationsCollection).doc();
     final payload = <String, dynamic>{
       'adminId': uid,
       'title': title,
@@ -326,6 +444,7 @@ class NotificationService extends GetxService {
       isRead: false,
       data: message.data,
       messageId: messageId,
+      firestoreCollection: legacyNotificationsCollection,
     );
   }
 
@@ -378,7 +497,12 @@ class NotificationService extends GetxService {
             onPressed: () {
               isPanelOpen.value = true;
               if (!notification.isRead) {
-                unawaited(markAsRead(notification.id));
+                unawaited(
+                  markAsRead(
+                    notification.id,
+                    collection: notification.firestoreCollection,
+                  ),
+                );
               }
             },
           ),
@@ -386,9 +510,12 @@ class NotificationService extends GetxService {
       );
   }
 
-  Future<void> markAsRead(String id) async {
+  Future<void> markAsRead(String id, {String? collection}) async {
+    final targetCollection =
+        collection ?? _collectionForNotificationId(id) ?? kAdminNotificationsCollection;
+
     try {
-      await _firestore.collection('notifications').doc(id).update({
+      await _firestore.collection(targetCollection).doc(id).update({
         'isRead': true,
         'readAt': FieldValue.serverTimestamp(),
       });
@@ -397,20 +524,44 @@ class NotificationService extends GetxService {
     }
   }
 
-  Future<void> markAllAsRead() async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return;
+  String? _collectionForNotificationId(String id) {
+    for (final notification in notifications) {
+      if (notification.id == id) {
+        return notification.firestoreCollection;
+      }
+    }
+    return null;
+  }
 
-    final unread = await _firestore
-        .collection('notifications')
-        .where('adminId', isEqualTo: uid)
+  Future<void> markAllAsRead() async {
+    final unreadAdmin = await _firestore
+        .collection(adminNotificationsCollection)
         .where('isRead', isEqualTo: false)
         .get();
 
-    if (unread.docs.isEmpty) return;
+    final uid = _auth.currentUser?.uid;
+    QuerySnapshot<Map<String, dynamic>>? unreadLegacy;
+    if (uid != null) {
+      unreadLegacy = await _firestore
+          .collection(legacyNotificationsCollection)
+          .where('adminId', isEqualTo: uid)
+          .where('isRead', isEqualTo: false)
+          .get();
+    }
+
+    if (unreadAdmin.docs.isEmpty &&
+        (unreadLegacy == null || unreadLegacy.docs.isEmpty)) {
+      return;
+    }
 
     final batch = _firestore.batch();
-    for (final doc in unread.docs) {
+    for (final doc in unreadAdmin.docs) {
+      batch.update(doc.reference, {
+        'isRead': true,
+        'readAt': FieldValue.serverTimestamp(),
+      });
+    }
+    for (final doc in unreadLegacy?.docs ?? const []) {
       batch.update(doc.reference, {
         'isRead': true,
         'readAt': FieldValue.serverTimestamp(),
@@ -457,7 +608,8 @@ class NotificationService extends GetxService {
   @override
   void onClose() {
     _authSub?.cancel();
-    _historySub?.cancel();
+    _adminNotificationsSub?.cancel();
+    _legacyNotificationsSub?.cancel();
     _tokenRefreshSub?.cancel();
     _foregroundSub?.cancel();
     _openedAppSub?.cancel();

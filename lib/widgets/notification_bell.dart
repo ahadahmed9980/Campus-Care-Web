@@ -252,7 +252,10 @@ class NotificationHistoryPanel extends StatelessWidget {
                   notification: item,
                   onTap: () async {
                     if (!item.isRead) {
-                      await service.markAsRead(item.id);
+                      await service.markAsRead(
+                        item.id,
+                        collection: item.firestoreCollection,
+                      );
                     }
                   },
                 );

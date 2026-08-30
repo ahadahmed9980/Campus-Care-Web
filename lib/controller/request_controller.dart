@@ -32,33 +32,39 @@ class RequestController extends GetxController {
 
   Timer? _searchDebounce;
   bool _isResettingFilters = false;
+  bool _isSearching = false;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _requestsSub;
 
   @override
   void onInit() {
     super.onInit();
-    fetchFirstPage();
+    _startRequestsListener();
     fetchCategories();
 
     // Listen to filter changes and automatically refresh requests
     selectedStatus.listen((val) {
       if (_isResettingFilters) return;
       searchrbar.clear();
-      fetchFirstPage(forceRefresh: true);
+      _isSearching = false;
+      _startRequestsListener();
     });
     selectedPriority.listen((val) {
       if (_isResettingFilters) return;
       searchrbar.clear();
-      fetchFirstPage(forceRefresh: true);
+      _isSearching = false;
+      _startRequestsListener();
     });
     selectedCategory.listen((val) {
       if (_isResettingFilters) return;
       searchrbar.clear();
-      fetchFirstPage(forceRefresh: true);
+      _isSearching = false;
+      _startRequestsListener();
     });
   }
 
   @override
   void onClose() {
+    _requestsSub?.cancel();
     _searchDebounce?.cancel();
     searchrbar.dispose();
     super.onClose();
@@ -79,64 +85,87 @@ class RequestController extends GetxController {
     }
   }
 
-  // fetching pages
-  Future<void> fetchFirstPage({bool forceRefresh = false}) async {
-    if (isLoading.value) return;
-    if (requestList.isNotEmpty && !forceRefresh) return;
+  Future<Query<Map<String, dynamic>>?> _buildFilteredQuery() async {
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(
+      FetchRequestService.requestsCollection,
+    );
 
+    if (selectedStatus.value != "All Status") {
+      query = query.where("status", isEqualTo: selectedStatus.value);
+    }
+    if (selectedPriority.value != "All Priority") {
+      final p = selectedPriority.value;
+      final capitalizedPriority = p[0].toUpperCase() + p.substring(1);
+      query = query.where("priority", isEqualTo: capitalizedPriority);
+    }
+    if (selectedCategory.value != "All Categories") {
+      final catSnapshot = await FirebaseFirestore.instance
+          .collection("requestCategories")
+          .where("name", isEqualTo: selectedCategory.value)
+          .limit(1)
+          .get();
+      if (catSnapshot.docs.isNotEmpty) {
+        query = query.where(
+          "categoryId",
+          isEqualTo: catSnapshot.docs.first.id,
+        );
+      } else {
+        return null;
+      }
+    }
+
+    return query;
+  }
+
+  Future<void> _startRequestsListener() async {
+    if (_isSearching) return;
+
+    _requestsSub?.cancel();
     try {
       isLoading.value = true;
-      if (forceRefresh) {
-        lastDocument = null;
-        hasNextPage.value = true;
+      lastDocument = null;
+      hasNextPage.value = true;
+
+      final query = await _buildFilteredQuery();
+      if (query == null) {
+        requestList.clear();
+        hasNextPage.value = false;
+        isLoading.value = false;
+        return;
       }
 
-      Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(
-        "requests",
+      _requestsSub = fetchRequestService
+          .watchRequests(query.limit(pageSize))
+          .listen(
+        (snapshot) {
+          requestList.value = snapshot.docs.map((doc) {
+            return RequestModel.fromMap(doc.data(), doc.id);
+          }).toList();
+
+          if (snapshot.docs.isNotEmpty) {
+            lastDocument = snapshot.docs.last;
+          }
+          hasNextPage.value = snapshot.docs.length == pageSize;
+          isLoading.value = false;
+        },
+        onError: (err) {
+          debugPrint("Error listening to requests: $err");
+          isLoading.value = false;
+        },
       );
-
-      if (selectedStatus.value != "All Status") {
-        query = query.where("status", isEqualTo: selectedStatus.value);
-      }
-      if (selectedPriority.value != "All Priority") {
-        final p = selectedPriority.value;
-        final capitalizedPriority = p[0].toUpperCase() + p.substring(1);
-        query = query.where("priority", isEqualTo: capitalizedPriority);
-      }
-      if (selectedCategory.value != "All Categories") {
-        // Find category ID by name
-        final catSnapshot = await FirebaseFirestore.instance
-            .collection("requestCategories")
-            .where("name", isEqualTo: selectedCategory.value)
-            .limit(1)
-            .get();
-        if (catSnapshot.docs.isNotEmpty) {
-          query = query.where(
-            "categoryId",
-            isEqualTo: catSnapshot.docs.first.id,
-          );
-        } else {
-          requestList.clear();
-          lastDocument = null;
-          hasNextPage.value = false;
-          return;
-        }
-      }
-
-      final snapshot = await query.limit(pageSize).get();
-      requestList.value = snapshot.docs.map((doc) {
-        return RequestModel.fromMap(doc.data(), doc.id);
-      }).toList();
-
-      if (snapshot.docs.isNotEmpty) {
-        lastDocument = snapshot.docs.last;
-      }
-      hasNextPage.value = snapshot.docs.length == pageSize;
     } catch (err) {
-      debugPrint("Error fetching first page of requests: $err");
-    } finally {
+      debugPrint("Error starting requests listener: $err");
       isLoading.value = false;
     }
+  }
+
+  // fetching pages
+  Future<void> fetchFirstPage({bool forceRefresh = false}) async {
+    if (_isSearching) return;
+    if (!forceRefresh && requestList.isNotEmpty && _requestsSub != null) {
+      return;
+    }
+    await _startRequestsListener();
   }
 
   //fetch next page
@@ -147,7 +176,7 @@ class RequestController extends GetxController {
     try {
       isLoading.value = true;
       Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(
-        "requests",
+        FetchRequestService.requestsCollection,
       );
 
       if (selectedStatus.value != "All Status") {
@@ -196,6 +225,8 @@ class RequestController extends GetxController {
   void searchRequests(String queryVal) {
     final queryText = queryVal.trim();
     if (queryText.isNotEmpty) {
+      _isSearching = true;
+      _requestsSub?.cancel();
       _isResettingFilters = true;
       selectedStatus.value = "All Status";
       selectedPriority.value = "All Priority";
@@ -211,7 +242,8 @@ class RequestController extends GetxController {
   Future<void> _executeSearch(String queryVal) async {
     final queryText = queryVal.trim();
     if (queryText.isEmpty) {
-      fetchFirstPage(forceRefresh: true);
+      _isSearching = false;
+      await _startRequestsListener();
       return;
     }
 
@@ -222,7 +254,7 @@ class RequestController extends GetxController {
           : queryText[0].toUpperCase() + queryText.substring(1);
 
       final snapshot = await FirebaseFirestore.instance
-          .collection("requests")
+          .collection(FetchRequestService.requestsCollection)
           .where('title', isGreaterThanOrEqualTo: queryText)
           .where('title', isLessThanOrEqualTo: '$queryText\uf8ff')
           .limit(pageSize)
@@ -234,7 +266,7 @@ class RequestController extends GetxController {
 
       if (capitalizedQuery != queryText) {
         final capSnapshot = await FirebaseFirestore.instance
-            .collection("requests")
+            .collection(FetchRequestService.requestsCollection)
             .where('title', isGreaterThanOrEqualTo: capitalizedQuery)
             .where('title', isLessThanOrEqualTo: '$capitalizedQuery\uf8ff')
             .limit(pageSize)

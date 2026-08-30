@@ -5,6 +5,7 @@ import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:customer_care_webapp/widgets/badges/prority_badge.dart';
 import 'package:customer_care_webapp/widgets/badges/status_badge.dart';
 import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
+import 'package:customer_care_webapp/widgets/custom_button.dart';
 import 'package:customer_care_webapp/widgets/textformField.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -127,6 +128,7 @@ class RequestDetail extends StatelessWidget {
               final remarksField = DynamicTextFormField(
                 controller: requestDetailcontroller.resolutionInfo,
                 hintText: "Enter remarks",
+                labelText: "Remarks",
                 suffixicon: Icons.send_outlined,
                 isLoading: requestDetailcontroller.isRemarksLoading.value,
                 callback: () {
@@ -140,6 +142,7 @@ class RequestDetail extends StatelessWidget {
                 items: requestDetailcontroller.departmentNames,
                 enabled: !isClosed,
                 hintText: "Assign Department",
+                labelText: "Department",
                 isLoading: requestDetailcontroller.isDepartmentLoading.value,
                 onChanged: (value) {
                   if (value != null) {
@@ -153,12 +156,19 @@ class RequestDetail extends StatelessWidget {
                 selectedValue: requestDetailcontroller.selectedStatus,
                 items: requestDetailcontroller.status,
                 enabled: !isClosed,
+                hintText: "Select status",
+                labelText: "Status",
                 isLoading: requestDetailcontroller.isStatusLoading.value,
-                onChanged: (value) {
-                  if (value != null) {
-                    requestDetailcontroller.updateStatus(value);
-                  }
-                },
+              );
+
+              final statusUpdateButton = CustomButton(
+                title: "Update Status",
+                isLoading: requestDetailcontroller.isStatusLoading.value,
+                callback: isClosed
+                    ? () {}
+                    : () {
+                        requestDetailcontroller.applyPendingStatusUpdate();
+                      },
               );
 
               if (isMobileScreen) {
@@ -169,16 +179,24 @@ class RequestDetail extends StatelessWidget {
                     deptDropdown,
                     const SizedBox(height: 10),
                     statusDropdown,
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: statusUpdateButton,
+                    ),
                   ],
                 );
               } else {
                 return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(child: remarksField),
                     const SizedBox(width: 10),
                     Expanded(child: deptDropdown),
                     const SizedBox(width: 10),
                     Expanded(child: statusDropdown),
+                    const SizedBox(width: 10),
+                    statusUpdateButton,
                   ],
                 );
               }

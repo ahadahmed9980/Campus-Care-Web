@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/request_Category_model.dart';
 import 'package:customer_care_webapp/models/request_model.dart';
 import 'package:customer_care_webapp/services/fetch_request_service.dart';
@@ -25,6 +27,8 @@ class DashboardController extends GetxController {
   RxList<RequestModel> allRequests = <RequestModel>[].obs;
   RxList<RequestCategoryModel> categories = <RequestCategoryModel>[].obs;
 
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _requestsSub;
+
   @override
   void onInit() {
     super.onInit();
@@ -33,7 +37,34 @@ class DashboardController extends GetxController {
       final days = int.parse(val.split(' ')[0]);
       selectedTimeframe.value = days;
     });
+    _listenToRequests();
     loadDashboardData();
+  }
+
+  @override
+  void onClose() {
+    _requestsSub?.cancel();
+    super.onClose();
+  }
+
+  void _listenToRequests() {
+    _requestsSub?.cancel();
+    _requestsSub = FetchRequestService().watchAllRequests().listen(
+      (snapshot) {
+        allRequests.assignAll(
+          snapshot.docs.map(
+            (doc) => RequestModel.fromMap(doc.data(), doc.id),
+          ),
+        );
+        isLoading.value = false;
+        isError.value = false;
+      },
+      onError: (e) {
+        debugPrint("Error listening to requests: $e");
+        isError.value = true;
+        isLoading.value = false;
+      },
+    );
   }
 
   Future<void> _loadThemeFromPrefs() async {
@@ -56,27 +87,19 @@ class DashboardController extends GetxController {
     }
   }
 
-  // Fetch all initial data from services
+  // Fetch categories (requests stream updates live via _listenToRequests)
   Future<void> loadDashboardData() async {
     try {
       isLoading.value = true;
       isError.value = false;
 
-      // 1. Fetch requests
-      final requestsSnapshot = await FetchRequestService().fetchAllRequests();
-      final List<RequestModel> tempList = [];
-      for (var doc in requestsSnapshot.docs) {
-        tempList.add(RequestModel.fromMap(doc.data(), doc.id));
-      }
-
-      // 2. Fetch categories
-      final categoriesSnapshot = await RequestCategoriesService().fetchAllCategories();
+      final categoriesSnapshot =
+          await RequestCategoriesService().fetchAllCategories();
       final List<RequestCategoryModel> tempCats = [];
       for (var doc in categoriesSnapshot.docs) {
         tempCats.add(RequestCategoryModel.fromMap(doc.data(), docId: doc.id));
       }
 
-      allRequests.assignAll(tempList);
       categories.assignAll(tempCats);
     } catch (e) {
       debugPrint("Error loading dashboard data: $e");

@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/request_model.dart';
 import 'package:customer_care_webapp/models/request_status_history_model.dart';
+import 'package:customer_care_webapp/services/student_notification_service.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
+import 'package:customer_care_webapp/utils/app_keys.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -33,6 +35,63 @@ class RequestDetailController extends GetxController {
     'Closed',
   ].obs;
   var selectedStatus = "Under Review".obs;
+
+  bool get hasPendingStatusChange {
+    final req = request.value;
+    if (req == null) return false;
+    return selectedStatus.value.trim().toLowerCase() !=
+        req.status.trim().toLowerCase();
+  }
+
+  Future<void> applyPendingStatusUpdate() async {
+    if (request.value == null) return;
+
+    if (!hasPendingStatusChange) {
+      _showSnackBar(
+        title: 'Info',
+        message: 'Select a different status before updating.',
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+
+    await updateStatus(selectedStatus.value);
+  }
+
+  void _showSnackBar({
+    required String title,
+    required String message,
+    required Color backgroundColor,
+  }) {
+    final messenger = rootScaffoldMessengerKey.currentState;
+    if (messenger == null) {
+      debugPrint('$title: $message');
+      return;
+    }
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: backgroundColor,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(message, style: const TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+      );
+  }
 
   Future<void> fetchRequestDetails(String requestId) async {
     try {
@@ -208,21 +267,17 @@ class RequestDetailController extends GetxController {
       // refresh request details
       await fetchRequestDetails(req.id);
 
-      Get.snackbar(
-        "Success",
-        "Assigned department updated to $deptName",
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackBar(
+        title: "Success",
+        message: "Assigned department updated to $deptName",
         backgroundColor: Colors.green,
-        colorText: Colors.white,
       );
     } catch (e) {
       debugPrint("Error updating assigned department: $e");
-      Get.snackbar(
-        "Error",
-        "Failed to update department: $e",
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackBar(
+        title: "Error",
+        message: "Failed to update department: $e",
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     } finally {
       isDepartmentLoading.value = false;
@@ -233,6 +288,11 @@ class RequestDetailController extends GetxController {
     final currentRequest = request.value;
     if (currentRequest == null) return;
 
+    if (newStatus.trim().toLowerCase() ==
+        currentRequest.status.trim().toLowerCase()) {
+      return;
+    }
+
     try {
       isStatusLoading.value = true;
       final now = Timestamp.now();
@@ -242,16 +302,19 @@ class RequestDetailController extends GetxController {
         'updatedAt': now,
       };
 
-      String resolutionInfo = "";
+      String resolvedMessage = "";
       String resolvedBy = "";
       Timestamp? resolvedAt;
 
       if (newStatus == 'Resolved') {
-        resolutionInfo = "Resolved by Admin via Panel";
+        final remarks = resolutionInfo.text.trim();
+        resolvedMessage = remarks.isNotEmpty
+            ? remarks
+            : "Resolved by Admin via Panel";
         resolvedBy = "Admin";
         resolvedAt = now;
 
-        updateData['resolutionInfo'] = resolutionInfo;
+        updateData['resolutionInfo'] = resolvedMessage;
         updateData['resolvedBy'] = resolvedBy;
         updateData['resolvedAt'] = resolvedAt;
       }
@@ -266,7 +329,7 @@ class RequestDetailController extends GetxController {
       final historyData = {
         'status': newStatus,
         'message': newStatus == 'Resolved'
-            ? 'Request resolved: $resolutionInfo'
+            ? 'Request resolved: $resolvedMessage'
             : 'Status updated to $newStatus',
         'changedBy': 'Admin',
         'changedByRole': 'admin',
@@ -279,10 +342,43 @@ class RequestDetailController extends GetxController {
           .collection("statusHistory")
           .add(historyData);
 
+      selectedStatus.value = newStatus;
+
+      if (newStatus == 'Resolved' &&
+          currentRequest.status.trim().toLowerCase() != 'resolved' &&
+          currentRequest.userId.isNotEmpty) {
+        try {
+          final remarks = resolutionInfo.text.trim();
+          await StudentNotificationService.instance.notifyRequestResolved(
+            userId: currentRequest.userId,
+            requestId: currentRequest.id,
+            requestTitle: currentRequest.title,
+            resolutionMessage:
+                remarks.isNotEmpty ? remarks : resolvedMessage,
+          );
+        } catch (notificationError) {
+          debugPrint(
+            "Request resolved but student notification failed: "
+            "$notificationError",
+          );
+        }
+      }
+
       // 3. Refresh details locally to update UI
       await fetchRequestDetails(currentRequest.id);
+
+      _showSnackBar(
+        title: 'Success',
+        message: 'Status updated to $newStatus',
+        backgroundColor: Colors.green,
+      );
     } catch (e) {
       debugPrint("Error updating request status: $e");
+      _showSnackBar(
+        title: 'Error',
+        message: 'Failed to update status: $e',
+        backgroundColor: Colors.red,
+      );
     } finally {
       isStatusLoading.value = false;
     }
@@ -327,12 +423,10 @@ class RequestDetailController extends GetxController {
     
     final text = resolutionInfo.text.trim();
     if (text.isEmpty) {
-      Get.snackbar(
-        "Warning",
-        "Remarks cannot be empty",
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackBar(
+        title: "Warning",
+        message: "Remarks cannot be empty",
         backgroundColor: Colors.orange,
-        colorText: Colors.white,
       );
       return;
     }
@@ -364,21 +458,17 @@ class RequestDetailController extends GetxController {
       // refresh request details
       await fetchRequestDetails(req.id);
       
-      Get.snackbar(
-        "Success",
-        "Remarks updated successfully!",
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackBar(
+        title: "Success",
+        message: "Remarks updated successfully!",
         backgroundColor: Colors.green,
-        colorText: Colors.white,
       );
     } catch (e) {
       debugPrint("Error updating remarks: $e");
-      Get.snackbar(
-        "Error",
-        "Failed to update remarks: $e",
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackBar(
+        title: "Error",
+        message: "Failed to update remarks: $e",
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     } finally {
       isRemarksLoading.value = false;
