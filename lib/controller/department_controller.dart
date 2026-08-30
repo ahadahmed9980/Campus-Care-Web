@@ -23,6 +23,7 @@ class DepartmentController extends GetxController {
   int pageSize = 5;
 
   RxBool hasNextPage = true.obs;
+  final RxSet<String> togglingIds = <String>{}.obs;
 
   @override
   void onInit() {
@@ -168,8 +169,11 @@ class DepartmentController extends GetxController {
 
   //toogle from table
   Future<void> togglePublishStatus(DepartmentModel item, bool newValue) async {
+    if (item.id == null || item.id!.isEmpty) return;
+    if (togglingIds.contains(item.id)) return;
+
     try {
-      if (item.id == null || item.id!.isEmpty) return;
+      togglingIds.add(item.id!);
 
       final reference = FirebaseFirestore.instance
           .collection('departments')
@@ -204,6 +208,8 @@ class DepartmentController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      togglingIds.remove(item.id);
     }
   }
 

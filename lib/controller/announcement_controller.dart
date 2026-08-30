@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -39,6 +40,9 @@ class AnnouncementController extends GetxController {
   int pageSize = 5;
 
   RxBool hasNextPage = true.obs;
+  
+  Timer? _searchDebounce;
+  final RxSet<String> togglingIds = <String>{}.obs;
 
   @override
   void onInit() {
@@ -63,6 +67,7 @@ class AnnouncementController extends GetxController {
 //dispose to prtect data leakage
   @override
   void onClose() {
+    _searchDebounce?.cancel();
     descriptionController.dispose();
     titleController.dispose();
     searchController.dispose();
@@ -325,8 +330,11 @@ class AnnouncementController extends GetxController {
     AnnouncementModel item,
     bool newValue,
   ) async {
+    if (item.id == null || item.id!.isEmpty) return;
+    if (togglingIds.contains(item.id)) return;
+
     try {
-      if (item.id == null || item.id!.isEmpty) return;
+      togglingIds.add(item.id!);
       //fetching the required data
 
       final reference = FirebaseFirestore.instance
@@ -366,10 +374,19 @@ class AnnouncementController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      togglingIds.remove(item.id);
     }
   }
 
-  Future<void> searchAnnouncements(String queryVal) async {
+  void searchAnnouncements(String queryVal) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
+      await _executeSearch(queryVal);
+    });
+  }
+
+  Future<void> _executeSearch(String queryVal) async {
     final queryText = queryVal.trim();
     if (queryText.isEmpty) {
       fetchfirstPage(forceRefresh: true);

@@ -1,3 +1,4 @@
+import 'package:customer_care_webapp/services/admin_auth_service.dart';
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/utils/responseive.dart';
 import 'package:flutter/material.dart';
@@ -163,75 +164,107 @@ class CampusSidebar extends StatelessWidget {
         ),
       ],
       footerBuilder: (context, extended) {
-        return Container(
-          margin: const EdgeInsets.all(8),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+        return PopupMenuButton<String>(
+          offset: const Offset(0, -60),
+          color: const Color(0xFF0D1B2A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Colors.white10),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Stack(
+          onSelected: (value) async {
+            if (value == 'logout') {
+              try {
+                await AdminAuthService.instance.signOut();
+                if (context.mounted) {
+                  context.go('/login');
+                }
+              } catch (e) {
+                debugPrint('Logout failed: $e');
+              }
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem<String>(
+              value: 'logout',
+              child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Color(0xFF1A2A3A),
-                    child: Icon(
-                      Icons.person,
-                      size: 22,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00A86B),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF0D1B2A),
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
+                  Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
+                  SizedBox(width: 10),
+                  Text('Log Out', style: TextStyle(color: Colors.white, fontSize: 13)),
                 ],
               ),
-              if (extended) ...[
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Admin User',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+            ),
+          ],
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Color(0xFF1A2A3A),
+                      child: Icon(
+                        Icons.person,
+                        size: 22,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00A86B),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF0D1B2A),
+                            width: 1.5,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      Text(
-                        'Super Admin',
-                        style: TextStyle(color: Colors.white54, fontSize: 11),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                if (extended) ...[
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Admin User',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Super Admin',
+                          style: TextStyle(color: Colors.white54, fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.white54,
-                  size: 18,
-                ),
+                  const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.white54,
+                    size: 18,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         );
       },

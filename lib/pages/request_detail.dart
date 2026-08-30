@@ -8,6 +8,8 @@ import 'package:customer_care_webapp/widgets/customDropdownButton.dart';
 import 'package:customer_care_webapp/widgets/textformField.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -86,20 +88,38 @@ class RequestDetail extends StatelessWidget {
 
     return Scaffold(
       body: Obx(() {
-        if (requestDetailcontroller.isLoading.value &&
-            requestDetailcontroller.request.value == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        final showSkeleton = requestDetailcontroller.isLoading.value &&
+            requestDetailcontroller.request.value == null;
+
         if (requestDetailcontroller.isError.value ||
-            requestDetailcontroller.request.value == null) {
+            (!showSkeleton && requestDetailcontroller.request.value == null)) {
           return const Center(child: Text("Error loading request details."));
         }
 
-        final requestModel = requestDetailcontroller.request.value!;
-        final isClosed = requestModel.status.trim().toLowerCase() == "closed";
+        final requestModel = showSkeleton
+            ? RequestModel(
+                id: '12345',
+                userId: 'user_123',
+                title: 'Water leakage in Block B Room 102',
+                description: 'Mock Description about leakage in the bathroom washbasin area. Requires plumbing repair.',
+                categoryId: 'Plumbing',
+                location: 'Block B Room 102',
+                status: 'Under Review',
+                priority: 'High',
+                imageUrl: '',
+                assignedDepartmentId: 'dept_123',
+                resolutionInfo: '',
+                resolvedBy: '',
+                createdAt: Timestamp.now(),
+              )
+            : requestDetailcontroller.request.value!;
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
+        final isClosed = !showSkeleton && requestModel.status.trim().toLowerCase() == "closed";
+
+        return Skeletonizer(
+          enabled: showSkeleton,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
             final isMobile = constraints.maxWidth < 600;
             final isTablet = constraints.maxWidth < 1024;
 
@@ -265,8 +285,9 @@ class RequestDetail extends StatelessWidget {
               );
             }
           },
-        );
-      }),
+        ),
+      );
+    }),
     );
   }
 }

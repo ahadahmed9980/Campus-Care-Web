@@ -401,18 +401,22 @@ class CampusInfoTableSource extends DataTableSource {
         DataCell(Text(locationStr)),
         DataCell(Text(timingsStr)),
         DataCell(
-          Transform.scale(
-            scale: 0.75,
-            child: Switch(
-              value: info.isActive,
-              activeThumbColor: Colors.white,
-              activeTrackColor: AppColors.primary,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.red,
-              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-              onChanged: (bool value) {
-                campusinfoCtrl.togglePublishStatus(info, value);
-              },
+          Obx(
+            () => Transform.scale(
+              scale: 0.75,
+              child: Switch(
+                value: info.isActive,
+                activeThumbColor: Colors.white,
+                activeTrackColor: AppColors.primary,
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: Colors.red,
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                onChanged: campusinfoCtrl.togglingIds.contains(info.id)
+                    ? null
+                    : (bool value) {
+                        campusinfoCtrl.togglePublishStatus(info, value);
+                      },
+              ),
             ),
           ),
         ),

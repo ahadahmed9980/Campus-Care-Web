@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/user_model.dart';
 import 'package:customer_care_webapp/services/user_service.dart';
@@ -17,6 +18,8 @@ class AllUserscontroller extends GetxController {
  
   RxBool hasNextPage = true.obs;
 
+  Timer? _searchDebounce;
+
   @override
   void onInit() {
     super.onInit();
@@ -24,9 +27,10 @@ class AllUserscontroller extends GetxController {
   }
 
   @override
-  void dispose() {
+  void onClose() {
+    _searchDebounce?.cancel();
     searchcontroller.dispose();
-    super.dispose();
+    super.onClose();
   }
 
   Future<void> fetchfirstPage({bool forceRefresh = false}) async {
@@ -87,7 +91,14 @@ class AllUserscontroller extends GetxController {
     }
   }
 
-  Future<void> searchUsers(String queryVal) async {
+  void searchUsers(String queryVal) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
+      await _executeSearch(queryVal);
+    });
+  }
+
+  Future<void> _executeSearch(String queryVal) async {
     final queryText = queryVal.trim();
     if (queryText.isEmpty) {
       fetchfirstPage(forceRefresh: true);

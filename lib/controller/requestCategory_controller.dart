@@ -1,10 +1,9 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/request_Category_model.dart';
 import 'package:customer_care_webapp/services/request_Categories_Service.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_navigation/src/snackbar/snackbar.dart';
-import 'package:get/state_manager.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 class RequestcategoryController extends GetxController {
@@ -24,6 +23,9 @@ class RequestcategoryController extends GetxController {
   int pageSize = 5;
 
   RxBool hasNextPage = true.obs;
+  Timer? _searchDebounce;
+  final RxSet<String> togglingIds = <String>{}.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -32,11 +34,12 @@ class RequestcategoryController extends GetxController {
 
   @override
   void onClose() {
-    super.onClose();
+    _searchDebounce?.cancel();
     descriptionController.dispose();
     categoryIdController.dispose();
     titleController.dispose();
     searchController.dispose();
+    super.onClose();
   }
 
   void _resetForm() {
@@ -173,14 +176,15 @@ class RequestcategoryController extends GetxController {
     RequestCategoryModel item,
     bool newValue,
   ) async {
+    if (item.id == null || item.id!.isEmpty) return;
+    if (togglingIds.contains(item.id)) return;
+
     try {
-      if (item.id == null || item.id!.isEmpty) return;
-      //fetching the required data
+      togglingIds.add(item.id!);
 
       final reference = FirebaseFirestore.instance
           .collection('requestCategories')
           .doc(item.id);
-      //assigning new value
 
       await reference.update({
         'isActive': newValue,
@@ -188,7 +192,6 @@ class RequestcategoryController extends GetxController {
       });
 
       final snapshot = await reference.get();
-      //
       final index = requestCategoryList.indexWhere(
         (categories) => categories.id == item.id,
       );
@@ -214,6 +217,8 @@ class RequestcategoryController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      togglingIds.remove(item.id);
     }
   }
 
@@ -251,7 +256,14 @@ class RequestcategoryController extends GetxController {
     }
   }
 
-  Future<void> searchCategories(String queryVal) async {
+  void searchCategories(String queryVal) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
+      await _executeSearch(queryVal);
+    });
+  }
+
+  Future<void> _executeSearch(String queryVal) async {
     final queryText = queryVal.trim();
     if (queryText.isEmpty) {
       fetchfirstPage(forceRefresh: true);

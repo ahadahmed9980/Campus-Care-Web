@@ -522,19 +522,22 @@ class AnnouncementTableSource extends DataTableSource {
           ),
         ),
         DataCell(
-          Transform.scale(
-            scale: 0.75,
-            child: Switch(
-              value: announcement.isPublished,
-              activeColor: Colors.white,
-              activeTrackColor: AppColors.primary,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.red,
-              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-              onChanged: (bool value) {
-                //Jab Switch click ho, to pura object aur nayi value controller ko bhej di
-                announcementcontroller.togglePublishStatus(announcement, value);
-              },
+          Obx(
+            () => Transform.scale(
+              scale: 0.75,
+              child: Switch(
+                value: announcement.isPublished,
+                activeColor: Colors.white,
+                activeTrackColor: AppColors.primary,
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: Colors.red,
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                onChanged: announcementcontroller.togglingIds.contains(announcement.id)
+                    ? null
+                    : (bool value) {
+                        announcementcontroller.togglePublishStatus(announcement, value);
+                      },
+              ),
             ),
           ),
         ),

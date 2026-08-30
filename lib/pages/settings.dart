@@ -1,6 +1,7 @@
 import 'package:customer_care_webapp/utils/app_colors.dart';
 import 'package:customer_care_webapp/widgets/theme_toggle_switch.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -116,7 +117,7 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
+                ).animate().fadeIn(duration: 450.ms, curve: Curves.easeOutCubic).slideY(begin: 0.05, end: 0, duration: 450.ms, curve: Curves.easeOutCubic),
               ),
             ),
           ),

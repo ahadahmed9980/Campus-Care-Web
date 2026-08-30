@@ -12,7 +12,7 @@ class FetchRequestService {
   }) async {
     Query<Map<String, dynamic>> query = _firestore
         .collection("requests")
-        // .orderBy('createdAt', descending: true)
+        .orderBy('createdAt', descending: true)
         .limit(limit);
     if (lastDocumnt != null) {
       //initially

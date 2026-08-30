@@ -18,6 +18,7 @@ import 'package:customer_care_webapp/pages/main_page.dart';
 import 'package:customer_care_webapp/pages/notifications_page.dart';
 import 'package:customer_care_webapp/pages/request_detail.dart';
 import 'package:customer_care_webapp/pages/requests.dart';
+import 'package:customer_care_webapp/pages/settings.dart';
 import 'package:customer_care_webapp/bindings/send_notification_binding.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
@@ -139,12 +140,12 @@ final appRouter = GoRouter(
             return const NotificationsPage();
           },
         ),
-        //     GoRoute(
-        //       path: '/settings',
-        //       builder: (context, state) {
-        //         return SettingsPage();
-        //       },
-        //     ),
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) {
+                return const SettingsPage();
+              },
+            ),
       ],
       // ),
     ),

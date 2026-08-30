@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_care_webapp/models/request_model.dart';
 import 'package:customer_care_webapp/services/fetch_request_service.dart';
@@ -29,6 +30,9 @@ class RequestController extends GetxController {
   RxList<String> categories = ["All Categories"].obs;
   RxString selectedCategory = "All Categories".obs;
 
+  Timer? _searchDebounce;
+  bool _isResettingFilters = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -36,15 +40,28 @@ class RequestController extends GetxController {
     fetchCategories();
 
     // Listen to filter changes and automatically refresh requests
-    selectedStatus.listen((_) => fetchFirstPage(forceRefresh: true));
-    selectedPriority.listen((_) => fetchFirstPage(forceRefresh: true));
-    selectedCategory.listen((_) => fetchFirstPage(forceRefresh: true));
+    selectedStatus.listen((val) {
+      if (_isResettingFilters) return;
+      searchrbar.clear();
+      fetchFirstPage(forceRefresh: true);
+    });
+    selectedPriority.listen((val) {
+      if (_isResettingFilters) return;
+      searchrbar.clear();
+      fetchFirstPage(forceRefresh: true);
+    });
+    selectedCategory.listen((val) {
+      if (_isResettingFilters) return;
+      searchrbar.clear();
+      fetchFirstPage(forceRefresh: true);
+    });
   }
 
   @override
-  void dispose() {
+  void onClose() {
+    _searchDebounce?.cancel();
     searchrbar.dispose();
-    super.dispose();
+    super.onClose();
   }
 
   Future<void> fetchCategories() async {
@@ -176,7 +193,22 @@ class RequestController extends GetxController {
     }
   }
 
-  Future<void> searchRequests(String queryVal) async {
+  void searchRequests(String queryVal) {
+    final queryText = queryVal.trim();
+    if (queryText.isNotEmpty) {
+      _isResettingFilters = true;
+      selectedStatus.value = "All Status";
+      selectedPriority.value = "All Priority";
+      selectedCategory.value = "All Categories";
+      _isResettingFilters = false;
+    }
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
+      await _executeSearch(queryVal);
+    });
+  }
+
+  Future<void> _executeSearch(String queryVal) async {
     final queryText = queryVal.trim();
     if (queryText.isEmpty) {
       fetchFirstPage(forceRefresh: true);

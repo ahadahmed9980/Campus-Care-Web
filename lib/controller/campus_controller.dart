@@ -46,6 +46,7 @@ class CampusController extends GetxController {
   int pageSize = 5;
 
   RxBool hasNextPage = true.obs;
+  final RxSet<String> togglingIds = <String>{}.obs;
   //timing
   final timings = <DayTimingModel>[
     DayTimingModel(name: "Monday"),
@@ -313,13 +314,15 @@ class CampusController extends GetxController {
     }
   }
 
-  //toggle publish status
   Future<void> togglePublishStatus(
     CampusInformationModel item,
     bool newValue,
   ) async {
+    if (item.id == null || item.id!.isEmpty) return;
+    if (togglingIds.contains(item.id)) return;
+
     try {
-      if (item.id == null || item.id!.isEmpty) return;
+      togglingIds.add(item.id!);
 
       final reference = FirebaseFirestore.instance
           .collection('campusInformation')
@@ -356,6 +359,8 @@ class CampusController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      togglingIds.remove(item.id);
     }
   }
 

@@ -310,18 +310,22 @@ class DepartmentTableSource extends DataTableSource {
         DataCell(Text(info.description ?? '-')),
         DataCell(Text(contactStr)),
         DataCell(
-          Transform.scale(
-            scale: 0.75,
-            child: Switch(
-              value: info.isActive,
-              activeThumbColor: Colors.white,
-              activeTrackColor: AppColors.primary,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.red,
-              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-              onChanged: (bool value) {
-                departmentCtrl.togglePublishStatus(info, value);
-              },
+          Obx(
+            () => Transform.scale(
+              scale: 0.75,
+              child: Switch(
+                value: info.isActive,
+                activeThumbColor: Colors.white,
+                activeTrackColor: AppColors.primary,
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: Colors.red,
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                onChanged: departmentCtrl.togglingIds.contains(info.id)
+                    ? null
+                    : (bool value) {
+                        departmentCtrl.togglePublishStatus(info, value);
+                      },
+              ),
             ),
           ),
         ),

@@ -306,22 +306,25 @@ class RequestCategoryTableSource extends DataTableSource {
           ),
         ),
         DataCell(
-          Transform.scale(
-            scale: 0.75,
-            child: Switch(
-              value: requestCategory.isActive,
-              activeThumbColor: Colors.white,
-              activeTrackColor: AppColors.primary,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.red,
-              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-              onChanged: (bool value) {
-                //Jab Switch click ho, to pura object aur nayi value controller ko bhej di
-                requestcategorycontroller.togglePublishStatus(
-                  requestCategory,
-                  value,
-                );
-              },
+          Obx(
+            () => Transform.scale(
+              scale: 0.75,
+              child: Switch(
+                value: requestCategory.isActive,
+                activeThumbColor: Colors.white,
+                activeTrackColor: AppColors.primary,
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: Colors.red,
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                onChanged: requestcategorycontroller.togglingIds.contains(requestCategory.id)
+                    ? null
+                    : (bool value) {
+                        requestcategorycontroller.togglePublishStatus(
+                          requestCategory,
+                          value,
+                        );
+                      },
+              ),
             ),
           ),
         ),

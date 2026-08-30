@@ -1,4 +1,6 @@
 import 'package:customer_care_webapp/controller/dashboard_controller.dart';
+import 'package:customer_care_webapp/controller/connectivity_controller.dart';
+import 'package:customer_care_webapp/pages/no_internet_screen.dart';
 import 'package:customer_care_webapp/routes/app_router.dart';
 import 'package:customer_care_webapp/services/notification_service.dart';
 import 'package:customer_care_webapp/utils/app_keys.dart';
@@ -37,6 +39,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(DashboardController());
+    final connectivityController = Get.put(ConnectivityController());
 
     return Obx(
       () => MaterialApp.router(
@@ -49,6 +52,14 @@ class MyApp extends StatelessWidget {
             ? ThemeMode.dark
             : ThemeMode.light,
         title: 'Campus Care Web',
+        builder: (context, child) {
+          return Obx(() {
+            if (!connectivityController.isOnline.value) {
+              return const NoInternetScreen();
+            }
+            return child ?? const SizedBox.shrink();
+          });
+        },
       ),
     );
   }

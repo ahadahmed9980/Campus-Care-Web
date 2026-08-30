@@ -14,12 +14,15 @@ class LoginPage extends GetView<LoginController> {
     Widget? suffix,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textTheme = Theme.of(context).textTheme;
     final fill = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF7F9FA);
     final border = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE6EAEF);
 
     return InputDecoration(
+      hintStyle: textTheme.labelMedium?.copyWith(color: AppColors.grey),
+      errorStyle: textTheme.labelMedium?.copyWith(color: AppColors.red),
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
+      // hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
       prefixIcon: Icon(icon, color: AppColors.grey, size: 20),
       suffixIcon: suffix,
       filled: true,
@@ -124,6 +127,9 @@ class LoginPage extends GetView<LoginController> {
           ),
           const SizedBox(height: 8),
           TextFormField(
+            cursorHeight: 18,
+            //style
+            style: TextStyle(fontSize: 13),
             controller: controller.emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
@@ -145,15 +151,18 @@ class LoginPage extends GetView<LoginController> {
           const SizedBox(height: 8),
           Obx(
             () => TextFormField(
+              cursorHeight: 18,
+              //style
+              style: TextStyle(fontSize: 13),
               controller: controller.passwordController,
               obscureText: controller.obscurePassword.value,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _handleSignIn(context),
               validator: controller.validatePassword,
-                decoration: _inputDecoration(
-                  context: context,
-                  hint: 'Enter your password',
-                  icon: Icons.lock_outline_rounded,
+              decoration: _inputDecoration(
+                context: context,
+                hint: 'Enter your password',
+                icon: Icons.lock_outline_rounded,
                 suffix: IconButton(
                   onPressed: controller.togglePasswordVisibility,
                   icon: Icon(
@@ -222,8 +231,9 @@ class LoginPage extends GetView<LoginController> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      AppColors.primary.withValues(alpha: 0.6),
+                  disabledBackgroundColor: AppColors.primary.withValues(
+                    alpha: 0.6,
+                  ),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -273,10 +283,10 @@ class LoginPage extends GetView<LoginController> {
                 onPressed: controller.isLoading.value
                     ? null
                     : () => _handleGoogle(context),
-                icon: Icon(
-                  Icons.g_mobiledata_rounded,
-                  size: 28,
-                  color: Theme.of(context).colorScheme.onSurface,
+                icon: Image.asset(
+                  'assets/images/google.png',
+                  width: 24,
+                  height: 24,
                 ),
                 label: Text(
                   'Sign in with Google',

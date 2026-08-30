@@ -44,7 +44,7 @@ class AuthLayout extends StatelessWidget {
               alignment: Alignment.topCenter,
               children: [
                 ...previousChildren,
-                ?currentChild,
+                if (currentChild != null) currentChild,
               ],
             );
           },

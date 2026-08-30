@@ -46,6 +46,27 @@ class CustomPaginatedTable extends StatelessWidget {
       headingRowColor: WidgetStateProperty.all(
         isDarkMode ? AppColors.lightText : AppColors.lightBackground,
       ),
+      empty: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 40,
+              color: isDarkMode ? Colors.white30 : Colors.black26,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'No records found',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDarkMode ? Colors.white30 : Colors.black38,
+              ),
+            ),
+          ],
+        ),
+      ),
       columns: columns,
       source: source,
     );
