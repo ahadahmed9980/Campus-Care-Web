@@ -18,9 +18,10 @@ class RequestController extends GetxController {
   RxList<String> status = [
     "All Status",
     'Submitted',
-    "In Progress",
     'Under Review',
+    "In Progress",
     'Resolved',
+    'Rejected',
   ].obs;
   RxString selectedStatus = "All Status".obs;
 

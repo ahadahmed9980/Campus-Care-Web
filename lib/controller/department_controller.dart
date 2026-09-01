@@ -122,12 +122,12 @@ class DepartmentController extends GetxController {
       final currentTimestamp = DateTime.now();
 
       final DepartmentModel deptModel = DepartmentModel(
-        name: titleController.text.trim(),
-        code: codeController.text.trim(),
+        name: titleController.text.trim().toLowerCase(),
+        code: codeController.text.trim().toLowerCase(),
         description: descriptionController.text.trim(),
         phone: phoneController.text.trim(),
-        email: emailController.text.trim(),
-        website: websiteController.text.trim(),
+        email: emailController.text.trim().toLowerCase(),
+        website: websiteController.text.trim().toLowerCase(),
         isActive: isToggled.value,
         createdAt: currentTimestamp,
         updatedAt: currentTimestamp,

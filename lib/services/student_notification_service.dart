@@ -51,4 +51,46 @@ class StudentNotificationService {
       'users/$userId/notifications for $requestId',
     );
   }
+
+  /// Notifies the student that their request was rejected.
+  Future<void> notifyRequestRejected({
+    required String userId,
+    required String requestId,
+    required String requestTitle,
+    String? rejectionReason,
+  }) async {
+    if (userId.isEmpty) {
+      debugPrint(
+        'StudentNotificationService: skipped notification — empty userId',
+      );
+      return;
+    }
+
+    final trimmedTitle = requestTitle.trim();
+    final displayTitle =
+        trimmedTitle.isNotEmpty ? trimmedTitle : requestId;
+
+    final message = rejectionReason?.trim().isNotEmpty == true
+        ? 'Your request "$displayTitle" was rejected. ${rejectionReason!.trim()}'
+        : 'Your request "$displayTitle" was rejected.';
+
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .add({
+      'title': 'Request Rejected',
+      'message': message,
+      'requestId': requestId,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'expiresAt': null,
+      'type': 'request_rejected',
+    });
+
+    debugPrint(
+      'StudentNotificationService: request rejected notification sent to '
+      'users/$userId/notifications for $requestId',
+    );
+  }
 }

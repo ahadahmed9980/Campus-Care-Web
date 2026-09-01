@@ -116,8 +116,6 @@ class RequestDetail extends StatelessWidget {
               )
             : requestDetailcontroller.request.value!;
 
-        final isClosed = !showSkeleton && requestModel.status.trim().toLowerCase() == "closed";
-
         return Skeletonizer(
           enabled: showSkeleton,
           child: LayoutBuilder(
@@ -125,18 +123,16 @@ class RequestDetail extends StatelessWidget {
               final isMobile = constraints.maxWidth < 600;
               final isTablet = constraints.maxWidth < 1024;
 
-         final statusUpdateButton = Padding(
-  padding: const EdgeInsets.only(top: 24.0), // Yahan apni marzi ka margin set karein
-  child: CustomButton(
-    title: "Update Status",
-    isLoading: requestDetailcontroller.isStatusLoading.value,
-    callback: isClosed
-        ? () {}
-        : () {
-            requestDetailcontroller.applyPendingStatusUpdate();
-          },
-  ),
-);
+              final statusUpdateButton = Padding(
+                padding: const EdgeInsets.only(top: 24.0),
+                child: CustomButton(
+                  title: "Update Status",
+                  isLoading: requestDetailcontroller.isStatusLoading.value,
+                  callback: () {
+                    requestDetailcontroller.applyPendingStatusUpdate();
+                  },
+                ),
+              );
 
               Widget buildHeaderControls(bool isMobileScreen) {
                 final remarksField = DynamicTextFormField(
@@ -154,7 +150,6 @@ class RequestDetail extends StatelessWidget {
                   context: context,
                   selectedValue: requestDetailcontroller.selectedDepartmentName,
                   items: requestDetailcontroller.departmentNames,
-                  enabled: !isClosed,
                   hintText: "Assign Department",
                   labelText: "Department",
                   isLoading: requestDetailcontroller.isDepartmentLoading.value,
@@ -169,7 +164,6 @@ class RequestDetail extends StatelessWidget {
                   context: context,
                   selectedValue: requestDetailcontroller.selectedStatus,
                   items: requestDetailcontroller.status,
-                  enabled: !isClosed,
                   hintText: "Select status",
                   labelText: "Status",
                   isLoading: requestDetailcontroller.isStatusLoading.value,
@@ -183,13 +177,11 @@ class RequestDetail extends StatelessWidget {
                       deptDropdown,
                       const SizedBox(height: 10),
                       statusDropdown,
-                      if (!isClosed) ...[
-                        const SizedBox(height: 15),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: statusUpdateButton,
-                        ),
-                      ],
+                      const SizedBox(height: 15),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: statusUpdateButton,
+                      ),
                     ],
                   );
                 } else {
@@ -217,8 +209,7 @@ class RequestDetail extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("Request Details", style: textTheme.headlineLarge),
-                          if (!isClosed)
-                            statusUpdateButton,
+                          statusUpdateButton,
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -521,7 +512,7 @@ Widget container2(BuildContext context, RequestModel requestModel) {
                     'under review' => AppColors.blue,
                     'in progress' => AppColors.orange,
                     'resolved' => Colors.green,
-                    'closed' => Colors.teal,
+                    'rejected' => Colors.red,
                     _ => AppColors.grey,
                   };
 

@@ -82,14 +82,13 @@ class RequestcategoryController extends GetxController {
     }
   }
 
-
   Future<void> fetchNextPage() async {
     if (!hasNextPage.value || lastDocument == null || isLoading.value) {
       return;
     }
     try {
       isLoading.value = true;
-      
+
       final snapshot = await _requestCategoriesService.fetchRequestCategory(
         limit: pageSize,
         lastdocument: lastDocument,
@@ -124,7 +123,7 @@ class RequestcategoryController extends GetxController {
 
       // 3. Model prepare karein
       final RequestCategoryModel _requestCategoryModel = RequestCategoryModel(
-        name: titleController.text,
+        name: titleController.text.toLowerCase(),
         description: descriptionController.text,
         isActive: isToggled.value,
         createdAt: currentTimestamp,
@@ -272,8 +271,8 @@ class RequestcategoryController extends GetxController {
 
     try {
       isLoading.value = true;
-      final capitalizedQuery = queryText.isEmpty 
-          ? "" 
+      final capitalizedQuery = queryText.isEmpty
+          ? ""
           : queryText[0].toUpperCase() + queryText.substring(1);
 
       final snapshot = await FirebaseFirestore.instance
@@ -294,7 +293,7 @@ class RequestcategoryController extends GetxController {
             .where('name', isLessThanOrEqualTo: '$capitalizedQuery\uf8ff')
             .limit(pageSize)
             .get();
-            
+
         for (var doc in capSnapshot.docs) {
           final cat = RequestCategoryModel.fromMap(doc.data(), docId: doc.id);
           if (!list.any((c) => c.id == cat.id)) {

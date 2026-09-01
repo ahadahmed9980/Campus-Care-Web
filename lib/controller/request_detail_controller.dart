@@ -32,7 +32,7 @@ class RequestDetailController extends GetxController {
     'Under Review',
     "In Progress",
     'Resolved',
-    'Closed',
+    'Rejected',
   ].obs;
   var selectedStatus = "Under Review".obs;
 
@@ -326,11 +326,16 @@ class RequestDetailController extends GetxController {
           .update(updateData);
 
       // 2. Add history document to statusHistory subcollection
+      final remarks = resolutionInfo.text.trim();
       final historyData = {
         'status': newStatus,
         'message': newStatus == 'Resolved'
             ? 'Request resolved: $resolvedMessage'
-            : 'Status updated to $newStatus',
+            : newStatus == 'Rejected'
+                ? (remarks.isNotEmpty
+                    ? 'Request rejected: $remarks'
+                    : 'Request rejected')
+                : 'Status updated to $newStatus',
         'changedBy': 'Admin',
         'changedByRole': 'admin',
         'createdAt': now,
@@ -348,7 +353,6 @@ class RequestDetailController extends GetxController {
           currentRequest.status.trim().toLowerCase() != 'resolved' &&
           currentRequest.userId.isNotEmpty) {
         try {
-          final remarks = resolutionInfo.text.trim();
           await StudentNotificationService.instance.notifyRequestResolved(
             userId: currentRequest.userId,
             requestId: currentRequest.id,
@@ -359,6 +363,22 @@ class RequestDetailController extends GetxController {
         } catch (notificationError) {
           debugPrint(
             "Request resolved but student notification failed: "
+            "$notificationError",
+          );
+        }
+      } else if (newStatus == 'Rejected' &&
+          currentRequest.status.trim().toLowerCase() != 'rejected' &&
+          currentRequest.userId.isNotEmpty) {
+        try {
+          await StudentNotificationService.instance.notifyRequestRejected(
+            userId: currentRequest.userId,
+            requestId: currentRequest.id,
+            requestTitle: currentRequest.title,
+            rejectionReason: remarks.isNotEmpty ? remarks : null,
+          );
+        } catch (notificationError) {
+          debugPrint(
+            "Request rejected but student notification failed: "
             "$notificationError",
           );
         }
